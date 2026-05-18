@@ -1,0 +1,13 @@
+{
+  "name": "QR-REGISTRO",
+  "short_name": "QR",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/icono.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

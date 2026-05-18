@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro QR</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icono.jpg" type="image/jpeg">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="QR-Registro">
+    <link rel="apple-touch-icon" href="/icono.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      /* ── TEMA OSCURO (default) ── */
+      :root {
+        --bg:          #07090f;
+        --surface:     #0e1117;
+        --surface2:    #141824;
+        --surface3:    #0d1520;
+        --border:      #1f2737;
+        --border-lit:  #2e3f5c;
+        --accent:      #3b82f6;
+        --accent-glow: rgba(59,130,246,0.15);
+        --green:       #22c55e;
+        --green-glow:  rgba(34,197,94,0.12);
+        --red:         #ef4444;
+        --text:        #e2e8f0;
+        --text-muted:  #64748b;
+        --text-dim:    #94a3b8;
+        --radius:      14px;
+        --storage-bg:  rgba(10,12,18,0.92);
+      }
+
+      /* ── TEMA CLARO ── */
+      [data-theme="light"] {
+        --bg:          #f0f4f8;
+        --surface:     #ffffff;
+        --surface2:    #f8fafc;
+        --surface3:    #eef2f7;
+        --border:      #cbd5e1;
+        --border-lit:  #94a3b8;
+        --accent:      #2563eb;
+        --accent-glow: rgba(37,99,235,0.12);
+        --green:       #16a34a;
+        --green-glow:  rgba(22,163,74,0.10);
+        --red:         #dc2626;
+        --text:        #0f172a;
+        --text-muted:  #64748b;
+        --text-dim:    #475569;
+        --storage-bg:  rgba(240,244,248,0.95);
+      }
+
+      [data-theme="light"] body::before {
+        background:
+          radial-gradient(ellipse 55% 40% at 5% 0%,   rgba(37,99,235,0.06) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 30% at 95% 100%, rgba(22,163,74,0.05) 0%, transparent 70%);
+      }
+
+      [data-theme="light"] .item-bar { background: var(--surface); }
+      [data-theme="light"] .cnr-block { background: #f1f5f9; }
+      [data-theme="light"] #storage-bar { background: var(--storage-bg); border-color: var(--border); }
+      [data-theme="light"] #toast { background: var(--surface); color: var(--text); }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; padding: 0 0 60px; transition: background 0.3s, color 0.3s; }
+      body::before {
+        content: ''; position: fixed; inset: 0; z-index: 0;
+        background:
+          radial-gradient(ellipse 55% 40% at 5% 0%,   rgba(59,130,246,0.07) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 30% at 95% 100%, rgba(34,197,94,0.06)  0%, transparent 70%);
+        pointer-events: none; transition: background 0.3s;
+      }
+      .page { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; padding: 32px 20px 0; display: flex; flex-direction: column; gap: 24px; }
+
+      .header { display: flex; align-items: center; gap: 14px; }
+      .header-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), #6366f1); border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(59,130,246,0.35); }
+      .header-text h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+      .header-text p  { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; transition: background 0.3s, border-color 0.3s; }
+      .card-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+      .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+      .form-grid { display: grid; gap: 14px; }
+      .field { display: flex; flex-direction: column; gap: 6px; }
+      label { font-size: 0.78rem; font-weight: 500; color: var(--text-dim); letter-spacing: 0.3px; }
+      input[type="text"], textarea {
+        background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+        padding: 11px 14px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.93rem;
+        outline: none; transition: border-color 0.18s, box-shadow 0.18s, background 0.3s; width: 100%;
+      }
+      input[type="text"]:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+      input::placeholder, textarea::placeholder { color: var(--text-muted); }
+      textarea { resize: vertical; min-height: 72px; }
+
+      .drop-zone { position: relative; background: var(--surface2); border: 2px dashed var(--border); border-radius: 12px; padding: 22px 16px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; overflow: hidden; }
+      .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-glow); }
+      .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+      .drop-icon { font-size: 1.7rem; display: block; margin-bottom: 5px; }
+      .drop-label { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+      .drop-label strong { color: var(--accent); font-weight: 600; }
+
+      #qr-badge { display: none; align-items: center; gap: 10px; background: var(--green-glow); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 9px 13px; font-size: 0.76rem; color: var(--green); font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.5; margin-top: 10px; }
+      #qr-badge.show { display: flex; animation: fade-in 0.25s ease; }
+
+      .btn-row { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+      .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; border: none; border-radius: 10px; font-family: 'Outfit', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: transform 0.12s, box-shadow 0.15s; white-space: nowrap; }
+      .btn:active { transform: scale(0.97); }
+      .btn-success { background: linear-gradient(135deg, var(--green), #16a34a); color: #fff; box-shadow: 0 4px 14px rgba(34,197,94,0.25); flex: 1; }
+      .btn-success:hover { box-shadow: 0 4px 22px rgba(34,197,94,0.4); }
+      .btn-import { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,0.25); flex: 1; }
+      .btn-import:hover { box-shadow: 0 4px 22px rgba(99,102,241,0.4); }
+
+      .btn-sm { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; font-size: 0.76rem; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+      .btn-sm:hover            { border-color: var(--accent); color: var(--accent); }
+      .btn-sm.link-btn         { border-color: rgba(59,130,246,0.35); color: var(--accent); }
+      .btn-sm.link-btn:hover   { background: var(--accent-glow); }
+      .btn-sm.paste-btn        { border-color: rgba(245,158,11,0.4); color: #f59e0b; }
+      .btn-sm.paste-btn:hover  { background: rgba(245,158,11,0.1); }
+      .btn-sm.edit-btn         { border-color: rgba(99,102,241,0.4); color: #a78bfa; }
+      .btn-sm.edit-btn:hover   { background: rgba(99,102,241,0.1); }
+      .btn-sm.save-btn         { border-color: rgba(34,197,94,0.4); color: var(--green); }
+      .btn-sm.save-btn:hover   { background: var(--green-glow); }
+      .btn-sm.sheets-btn       { border-color: rgba(34,197,94,0.4); color: var(--green); }
+      .btn-sm.sheets-btn:hover { background: var(--green-glow); }
+      .btn-sm.danger           { border-color: rgba(239,68,68,0.4); color: var(--red); padding: 5px 9px; }
+      .btn-sm.danger:hover     { background: rgba(239,68,68,0.1); }
+
+      @keyframes fade-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes spin     { to { transform: rotate(360deg); } }
+
+      .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+      .list-count { font-size: 0.75rem; background: var(--border); color: var(--text-dim); padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+      #registro-list { display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+
+      .empty-state { text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.7; }
+      .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+      .item { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fade-in 0.28s ease; transition: border-color 0.15s, background 0.3s; }
+      .item:hover { border-color: var(--border-lit); }
+      .item.hidden { display: none; }
+
+      .item-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); border-left: 3px solid transparent; transition: background 0.3s; }
+      .bar-tramite   { border-left-color: #3b82f6; }
+      .bar-inscrito  { border-left-color: #22c55e; }
+      .bar-observado { border-left-color: #ef4444; }
+      .bar-catastro  { border-left-color: #a855f7; }
+      .bar-entrega   { border-left-color: #f59e0b; }
+      .bar-retirado  { border-left-color: #64748b; }
+
+      .item-num { width: 30px; height: 30px; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), #6366f1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 500; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); cursor: pointer; user-select: none; }
+      .item-num:hover { opacity: 0.85; }
+      .item-presentacion-bar { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      .num-tramite   { background: linear-gradient(135deg,#2563eb,#3b82f6) !important; }
+      .num-inscrito  { background: linear-gradient(135deg,#16a34a,#22c55e) !important; }
+      .num-observado { background: linear-gradient(135deg,#dc2626,#ef4444) !important; }
+      .num-catastro  { background: linear-gradient(135deg,#7c3aed,#a855f7) !important; }
+      .num-entrega   { background: linear-gradient(135deg,#d97706,#f59e0b) !important; }
+      .num-retirado  { background: linear-gradient(135deg,#475569,#64748b) !important; }
+
+      .item-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+      .item-body.collapsed { display: none; }
+      .item-detalles { font-size: 0.8rem; color: var(--text-dim); line-height: 1.4; }
+
+      .cnr-block { background: var(--surface3); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; transition: background 0.3s; }
+      .cnr-section-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); padding: 7px 11px 5px; border-bottom: 1px solid var(--border); }
+      .cnr-rows { padding: 8px 11px; display: flex; flex-direction: column; gap: 5px; }
+      .cnr-row { display: flex; gap: 8px; font-size: 0.76rem; line-height: 1.4; }
+      .cnr-label { color: var(--text-muted); flex-shrink: 0; min-width: 78px; }
+      .cnr-value { color: var(--text-dim); word-break: break-word; }
+      .cnr-value.estado-valor { color: var(--green); font-weight: 600; }
+      .cnr-empty { padding: 10px 11px; font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
+      .paste-spin { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--border-lit); border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+      .edit-wrap { display: none; padding: 10px 0 4px; }
+      .edit-wrap.visible { display: block; }
+      .edit-lbl { font-size: 0.66rem; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+      .edit-field-gap { margin-bottom: 8px; }
+      .edit-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+      .item-timestamp { font-size: 0.67rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+      .item-bottom-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+      /* Buscador */
+      .search-wrap { position: relative; margin-bottom: 14px; }
+      .search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 36px 10px 14px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.18s, box-shadow 0.18s, background 0.3s; }
+      .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+      .search-input::placeholder { color: var(--text-muted); }
+      .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 4px; display: none; }
+      .search-clear.visible { display: block; }
+      .search-count { font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; min-height: 16px; }
+
+      /* Storage + theme bar */
+      #storage-bar {
+        position: fixed; bottom: 0; left: 0;
+        display: flex; align-items: center; gap: 8px; padding: 5px 12px;
+        background: var(--storage-bg);
+        border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+        border-radius: 0 8px 0 0;
+        font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted);
+        z-index: 998; backdrop-filter: blur(6px);
+        transition: background 0.3s, border-color 0.3s;
+      }
+      #storage-size { color: var(--text-dim); white-space: nowrap; }
+      #storage-size.warn   { color: #f59e0b; }
+      #storage-size.danger { color: var(--red); }
+      .storage-btn { background: none; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-size: 0.68rem; padding: 2px 7px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; white-space: nowrap; }
+      .storage-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+      /* Botón de tema */
+      #theme-toggle {
+        background: none; border: 1px solid var(--border);
+        border-radius: 5px; cursor: pointer;
+        font-size: 0.9rem; padding: 1px 6px;
+        line-height: 1.4; transition: all 0.2s;
+        user-select: none;
+      }
+      #theme-toggle:hover { border-color: var(--accent); transform: scale(1.15); }
+
+      /* Separador */
+      .bar-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
+
+      #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border-lit); color: var(--text); font-size: 0.83rem; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 999; white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      canvas { display: none; }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+
+      <div class="header">
+        <div class="header-icon">&#11035;</div>
+        <div class="header-text">
+          <h1>Registro QR</h1>
+          <p>Captura y seguimiento de presentaciones CNR</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">&#128203; Nueva entrada</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>N&#176; de Presentaci&#243;n</label>
+            <input type="text" id="txtPresentacion" placeholder="Ej: 202611009689" value="20261100">
+          </div>
+          <div class="field">
+            <label>Detalles</label>
+            <textarea id="txtDetalles" placeholder="Descripci&#243;n, notas adicionales&#8230;"></textarea>
+          </div>
+          <div class="field">
+            <label>Imagen con c&#243;digo QR <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+            <div class="drop-zone" id="dropZone">
+              <input type="file" id="fileInput" accept="image/*">
+              <span class="drop-icon">&#128444;&#65039;</span>
+              <div class="drop-label"><strong>Selecciona</strong> o arrastra la imagen aqu&#237;</div>
+            </div>
+            <div id="qr-badge"><span>&#9989;</span><span id="qr-text-badge"></span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">&#10133; Agregar</button>
+            <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">&#11015;&#65039; Importar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="list-header">
+          <div class="card-title" style="margin-bottom:0">&#128196; Registros</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="list-count" id="list-count">0</span>
+            <button class="btn-sm sheets-btn" onclick="exportarASheets()">&#128202; Copiar para Sheets</button>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <input class="search-input" type="text" id="searchInput"
+                 placeholder="&#128269; Buscar por presentaci&#243;n, detalles, estado, matr&#237;cula&#8230;"
+                 oninput="buscar(this.value)">
+          <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar">&#x2715;</button>
+        </div>
+        <div class="search-count" id="searchCount"></div>
+        <div id="registro-list">
+          <div class="empty-state">
+            <span class="empty-icon">&#128235;</span>
+            No hay registros a&#250;n.<br>Completa el formulario y agrega el primero.
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="storage-bar">
+      <span id="storage-size">&#128190; --</span>
+      <div class="bar-sep"></div>
+      <button class="storage-btn" onclick="exportarBackup()">&#11015; Backup</button>
+      <button class="storage-btn" onclick="document.getElementById('importBackupFile').click()">&#11014; Cargar</button>
+      <input type="file" id="importBackupFile" accept=".json" style="display:none" onchange="importarBackup(this)">
+      <div class="bar-sep"></div>
+      <button id="theme-toggle" onclick="toggleTema()" title="Cambiar tema">&#127769;</button>
+    </div>
+
+    <div id="toast"></div>
+    <canvas id="canvas"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <script>
+      var STORAGE_KEY  = 'qr_registros_v1';
+      var THEME_KEY    = 'qr_tema_v1';
+      var CNR_CONSULTA = 'https://www.e.cnr.gob.sv/ConsultaTramite3/consulta/consultaTramite.htm';
+      var registros    = [];
+      var qrTexto      = '';
+      var terminoBusqueda = '';
+
+      var fileInput   = document.getElementById('fileInput');
+      var dropZone    = document.getElementById('dropZone');
+      var qrBadge     = document.getElementById('qr-badge');
+      var qrTextBadge = document.getElementById('qr-text-badge');
+      var canvas      = document.getElementById('canvas');
+      var ctx         = canvas.getContext('2d');
+
+      window.addEventListener('DOMContentLoaded', function() {
+        cargarTema();
+        cargarDesdeStorage();
+        renderList();
+      });
+
+      /* ── Tema ── */
+      function cargarTema() {
+        var tema = localStorage.getItem(THEME_KEY) || 'dark';
+        aplicarTema(tema);
+      }
+
+      function toggleTema() {
+        var actual = document.documentElement.getAttribute('data-theme');
+        var nuevo  = actual === 'dark' ? 'light' : 'dark';
+        aplicarTema(nuevo);
+        localStorage.setItem(THEME_KEY, nuevo);
+      }
+
+      function aplicarTema(tema) {
+        document.documentElement.setAttribute('data-theme', tema);
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = tema === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';
+      }
+
+      /* ── Drag & drop ── */
+      dropZone.addEventListener('dragover',  function(e) { e.preventDefault(); dropZone.classList.add('over'); });
+      dropZone.addEventListener('dragleave', function()  { dropZone.classList.remove('over'); });
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault(); dropZone.classList.remove('over');
+        var f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith('image/')) escanearImagen(f);
+      });
+      fileInput.addEventListener('change', function() {
+        if (this.files[0]) escanearImagen(this.files[0]);
+      });
+
+      function escanearImagen(file) {
+        qrTexto = '';
+        qrBadge.classList.remove('show');
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            var code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+            if (code) {
+              qrTexto = code.data;
+              qrTextBadge.textContent = qrTexto;
+              qrBadge.classList.add('show');
+              toast('QR detectado.');
+            } else {
+              toast('No se encontro QR en la imagen.');
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function agregarRegistro() {
+        var presentacion = document.getElementById('txtPresentacion').value.trim();
+        var detalles     = document.getElementById('txtDetalles').value.trim();
+        if (!presentacion) { toast('Ingresa el N de Presentacion.'); return; }
+        registros.push({
+          id:           Date.now(),
+          presentacion: presentacion,
+          detalles:     detalles,
+          qr:           qrTexto || '',
+          cnr:          null,
+          fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+        });
+        guardarEnStorage();
+        renderList();
+        limpiarFormulario();
+        toast('Registro agregado.');
+      }
+
+      function eliminarRegistro(id) {
+        registros = registros.filter(function(r) { return r.id !== id; });
+        guardarEnStorage();
+        renderList();
+        toast('Registro eliminado.');
+      }
+
+      function abrirCNR(presentacion, qrUrl) {
+        var url = qrUrl || CNR_CONSULTA;
+        window.open(url, '_blank', 'noopener,noreferrer');
+        if (!qrUrl) {
+          navigator.clipboard.writeText(presentacion).catch(function() {});
+          toast('CNR abierto y N copiado al portapapeles');
+        }
+      }
+
+      function toggleItem(id) {
+        var body = document.getElementById('body-' + id);
+        if (!body) return;
+        body.classList.toggle('collapsed');
+      }
+
+      function editarDetalles(id) {
+        var wrap = document.getElementById('edit-wrap-' + id);
+        if (!wrap) return;
+        var r = null;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) { r = registros[i]; break; }
+        }
+        if (!r) return;
+        document.getElementById('edit-pres-'  + id).value = r.presentacion || '';
+        document.getElementById('edit-input-' + id).value = r.detalles     || '';
+        wrap.classList.toggle('visible');
+        if (wrap.classList.contains('visible')) document.getElementById('edit-pres-' + id).focus();
+      }
+
+      function guardarDetalles(id) {
+        var elPres = document.getElementById('edit-pres-'  + id);
+        var elDet  = document.getElementById('edit-input-' + id);
+        if (!elPres || !elDet) return;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) {
+            var pres = elPres.value.trim();
+            if (pres) registros[i].presentacion = pres;
+            registros[i].detalles = elDet.value.trim();
+            break;
+          }
+        }
+        guardarEnStorage();
+        renderList();
+        toast('Registro actualizado.');
+      }
+
+      function pegarDesdeCNR(id) {
+        var cnrEl = document.getElementById('cnr-block-' + id);
+        if (cnrEl) cnrEl.innerHTML = '<div class="cnr-empty"><span class="paste-spin"></span> Leyendo portapapeles...</div>';
+        navigator.clipboard.readText().then(function(texto) {
+          if (!texto || texto.trim().length < 20) { toast('El portapapeles esta vacio o sin datos CNR.'); renderList(); return; }
+          var datos = parsearTextoCNR(texto);
+          for (var i = 0; i < registros.length; i++) {
+            if (registros[i].id === id) { registros[i].cnr = datos; break; }
+          }
+          guardarEnStorage();
+          renderList();
+          toast('Datos pegados correctamente.');
+        }).catch(function(e) { toast('Sin acceso al portapapeles: ' + e.message); renderList(); });
+      }
+
+      function parsearTextoCNR(texto) {
+        function extraer(label) {
+          var esc2 = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          var m    = texto.match(new RegExp(esc2 + '[:\\t\\s]*([^\\n\\r]+)', 'i'));
+          return m ? m[1].trim() : '';
+        }
+        function extraerEstado() {
+          var m = texto.match(/estado jur[íi]dico y ubicaci[óo]n del documento[:\t\s]*([^\n\r]+(?:[\n\r]+(?!fecha del estado)[^\n\r]+)*)/i);
+          return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+        }
+        return {
+          matricula:    extraer('N\u00famero de matr\u00edcula'),
+          presentacion: extraer('N\u00famero de presentaci\u00f3n'),
+          fechaPres:    extraer('Fecha de presentaci\u00f3n'),
+          direccion:    extraer('Direcci\u00f3n'),
+          ubicacion:    extraer('Ubicaci\u00f3n'),
+          acto:         extraer('Acto'),
+          estado:       extraerEstado(),
+          fechaEstado:  extraer('Fecha del estado y fecha del \u00faltimo movimiento'),
+          fechaSync:    new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+        };
+      }
+
+      function detectarEstado(r) {
+        if (!r.cnr || !r.cnr.estado) return '';
+        var e = r.cnr.estado.toLowerCase();
+        if (e.indexOf('retirad') >= 0)                                                  return 'retirado';
+        if (e.indexOf('observad') >= 0 || e.indexOf('correo') >= 0 ||
+            e.indexOf('notificad') >= 0 || e.indexOf('ver notif') >= 0)                return 'observado';
+        if (e.indexOf('listo') >= 0 || e.indexOf('entrega') >= 0)                      return 'entrega';
+        if (e.indexOf('inscrit') >= 0)                                                  return 'inscrito';
+        if (e.indexOf('catastro') >= 0)                                                 return 'catastro';
+        if (e.indexOf('tramite') >= 0 || e.indexOf('tr\u00e1mite') >= 0 ||
+            e.indexOf('despacho') >= 0 || e.indexOf('pendiente') >= 0)                 return 'tramite';
+        return '';
+      }
+
+      var ESTADO_INFO = {
+        tramite:   { barCls: 'bar-tramite',   numCls: 'num-tramite'   },
+        inscrito:  { barCls: 'bar-inscrito',  numCls: 'num-inscrito'  },
+        observado: { barCls: 'bar-observado', numCls: 'num-observado' },
+        catastro:  { barCls: 'bar-catastro',  numCls: 'num-catastro'  },
+        entrega:   { barCls: 'bar-entrega',   numCls: 'num-entrega'   },
+        retirado:  { barCls: 'bar-retirado',  numCls: 'num-retirado'  }
+      };
+
+      function renderCNRBlock(r) {
+        if (!r.cnr) {
+          return '<div class="cnr-block" id="cnr-block-' + r.id + '">' +
+            '<div class="cnr-empty">Sin datos &mdash; copia el texto de la pagina CNR y presiona Pegar datos</div>' +
+            '</div>';
+        }
+        var d = r.cnr;
+        function fila(lbl, val) {
+          if (!val) return '';
+          return '<div class="cnr-row"><span class="cnr-label">' + lbl + '</span><span class="cnr-value">' + esc(val) + '</span></div>';
+        }
+        return '<div class="cnr-block" id="cnr-block-' + r.id + '">' +
+          '<div class="cnr-section-title">Datos generales</div>' +
+          '<div class="cnr-rows">' +
+          fila('Matr\u00edcula',    d.matricula)    +
+          fila('Presentaci\u00f3n', d.presentacion) +
+          fila('Fecha pres.',       d.fechaPres)    +
+          fila('Direcci\u00f3n',    d.direccion)    +
+          fila('Ubicaci\u00f3n',    d.ubicacion)    +
+          fila('Acto',              d.acto)         +
+          '</div>' +
+          '<div class="cnr-section-title" style="border-top:1px solid var(--border)">Estado jur\u00eddico</div>' +
+          '<div class="cnr-rows">' +
+          (d.estado ? '<div class="cnr-row"><span class="cnr-label">Estado</span><span class="cnr-value estado-valor">' + esc(d.estado) + '</span></div>' : '') +
+          fila('Fecha estado', d.fechaEstado) +
+          fila('Actualizado',  d.fechaSync)  +
+          '</div>' +
+          '</div>';
+      }
+
+      function renderList() {
+        var list  = document.getElementById('registro-list');
+        var count = document.getElementById('list-count');
+        count.textContent = registros.length;
+        if (registros.length === 0) {
+          list.innerHTML = '<div class="empty-state"><span class="empty-icon">&#128235;</span>No hay registros a\u00fan.<br>Completa el formulario y agrega el primero.</div>';
+          return;
+        }
+        list.innerHTML = '';
+        for (var i = 0; i < registros.length; i++) {
+          var r      = registros[i];
+          var num    = String(registros.length - i).padStart(2, '0');
+          var estado = detectarEstado(r);
+          var info   = estado ? ESTADO_INFO[estado] : null;
+          var barCls = info ? info.barCls : '';
+          var numCls = info ? info.numCls : '';
+          var linkBtn = r.qr
+          ? '<button class="btn-sm link-btn" onclick="abrirCNR(\'' + esc(r.presentacion) + '\',\'' + encodeURI(r.qr) + '\')" title="Abrir link QR">&#128279; Ver</button>'
+          : '<button class="btn-sm link-btn" onclick="abrirCNR(\'' + esc(r.presentacion) + '\',\'\')" title="Consultar en CNR">&#128203;&#127760;</button>';
+          var detallesHTML = r.detalles ? '<div class="item-detalles">' + esc(r.detalles) + '</div>' : '';
+          var editWrap =
+              '<div class="edit-wrap" id="edit-wrap-' + r.id + '">' +
+              '<div class="edit-lbl edit-field-gap">N&#176; Presentaci&#243;n</div>' +
+              '<input type="text" id="edit-pres-' + r.id + '" placeholder="N\u00famero de presentaci\u00f3n" style="background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:8px 11px;color:var(--text);font-family:JetBrains Mono,monospace;font-size:0.85rem;outline:none;width:100%;margin-bottom:10px;">' +
+              '<div class="edit-lbl">Detalles</div>' +
+              '<textarea id="edit-input-' + r.id + '" placeholder="Escribe los detalles..." style="background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:8px 11px;color:var(--text);font-family:Outfit,sans-serif;font-size:0.85rem;outline:none;width:100%;min-height:58px;resize:vertical;margin-top:4px;box-shadow:0 0 0 2px var(--accent-glow);"></textarea>' +
+              '<div class="edit-actions">' +
+              '<button class="btn-sm save-btn" onclick="guardarDetalles(' + r.id + ')">&#10003; Guardar</button>' +
+              '<button class="btn-sm" onclick="editarDetalles(' + r.id + ')">Cancelar</button>' +
+              '</div>' +
+              '</div>';
+          var bottomRow =
+              '<div class="item-bottom-row">' +
+              '<button class="btn-sm paste-btn" onclick="pegarDesdeCNR(' + r.id + ')">&#128203; Pegar datos CNR</button>' +
+              '<button class="btn-sm edit-btn"  onclick="editarDetalles(' + r.id + ')">&#9998; Editar</button>' +
+              '<span class="item-timestamp">&#128336; ' + r.fecha + '</span>' +
+              '</div>';
+          var div = document.createElement('div');
+          div.className = 'item'; div.id = 'item-' + r.id;
+          div.innerHTML =
+            '<div class="item-bar ' + barCls + '">' +
+            '<div class="item-num ' + numCls + '" onclick="toggleItem(' + r.id + ')" title="Expandir / Contraer">#' + num + '</div>' +
+            '<div class="item-presentacion-bar">' + esc(r.presentacion) + '</div>' +
+            linkBtn +
+            '<button class="btn-sm danger" onclick="eliminarRegistro(' + r.id + ')" title="Eliminar">&#x2715;</button>' +
+            '</div>' +
+            '<div class="item-body collapsed" id="body-' + r.id + '">' +
+            detallesHTML + editWrap + renderCNRBlock(r) + bottomRow +
+            '</div>';
+          list.appendChild(div);
+        }
+        if (terminoBusqueda) aplicarFiltro();
+      }
+
+      function buscar(termino) {
+        terminoBusqueda = termino.trim().toLowerCase();
+        document.getElementById('searchClear').classList.toggle('visible', terminoBusqueda.length > 0);
+        aplicarFiltro();
+      }
+
+      function limpiarBusqueda() {
+        terminoBusqueda = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClear').classList.remove('visible');
+        for (var i = 0; i < registros.length; i++) {
+          var body = document.getElementById('body-' + registros[i].id);
+          if (body) body.classList.add('collapsed');
+        }
+        aplicarFiltro();
+      }
+
+      function aplicarFiltro() {
+        var items    = document.querySelectorAll('#registro-list .item');
+        var countEl  = document.getElementById('searchCount');
+        var visibles = 0;
+        items.forEach(function(item) {
+          if (!terminoBusqueda) { item.classList.remove('hidden'); visibles++; return; }
+          var id = item.id.replace('item-', '');
+          var r  = null;
+          for (var i = 0; i < registros.length; i++) {
+            if (String(registros[i].id) === id) { r = registros[i]; break; }
+          }
+          if (!r) { item.classList.add('hidden'); return; }
+          var haystack = [r.presentacion||'', r.detalles||'', r.fecha||'',
+                          r.cnr?(r.cnr.matricula||''):'', r.cnr?(r.cnr.acto||''):'',
+                          r.cnr?(r.cnr.direccion||''):'', r.cnr?(r.cnr.ubicacion||''):'',
+                          r.cnr?(r.cnr.estado||''):'', r.cnr?(r.cnr.presentacion||''):''
+                         ].join(' ').toLowerCase();
+          if (haystack.indexOf(terminoBusqueda) >= 0) {
+            item.classList.remove('hidden');
+            var body = document.getElementById('body-' + r.id);
+            if (body) body.classList.remove('collapsed');
+            visibles++;
+          } else { item.classList.add('hidden'); }
+        });
+        if (countEl) countEl.textContent = terminoBusqueda ? (visibles + ' resultado' + (visibles!==1?'s':'') + ' encontrado' + (visibles!==1?'s':'')) : '';
+      }
+
+      function importarDeSheets() {
+        navigator.clipboard.readText().then(function(texto) {
+          if (!texto || texto.trim().length === 0) { toast('El portapapeles esta vacio.'); return; }
+          var lineas = texto.trim().split(/\r?\n/);
+          var nuevos = 0, omitidos = 0;
+          for (var i = 0; i < lineas.length; i++) {
+            var linea = lineas[i].trim(); if (!linea) continue;
+            var partes = linea.split('\t');
+            var presentacion = (partes[0]||'').trim();
+            var detalles     = (partes[1]||'').trim();
+            if (!presentacion) continue;
+            var existe = false;
+            for (var j = 0; j < registros.length; j++) { if (registros[j].presentacion===presentacion){existe=true;break;} }
+            if (existe) { omitidos++; continue; }
+            registros.push({ id:Date.now()+i, presentacion:presentacion, detalles:detalles, qr:'', cnr:null,
+                            fecha:new Date().toLocaleString('es-SV',{dateStyle:'short',timeStyle:'short'}) });
+            nuevos++;
+          }
+          if (nuevos===0&&omitidos===0) { toast('Sin datos validos en el portapapeles.'); return; }
+          guardarEnStorage(); renderList();
+          var msg = nuevos+' importado'+(nuevos!==1?'s':'');
+          if (omitidos>0) msg += ' \u00b7 '+omitidos+' ya exist\u00eda'+(omitidos!==1?'n':'');
+          toast(msg);
+        }).catch(function(e){ toast('Sin acceso al portapapeles: '+e.message); });
+      }
+
+      function exportarASheets() {
+        if (registros.length===0) { toast('No hay registros para copiar.'); return; }
+        var filas = [];
+        for (var i=0;i<registros.length;i++) {
+          var r=registros[i];
+          filas.push((r.presentacion||'').replace(/\t/g,' ').replace(/\n/g,' ') + '\t' + (r.detalles||'').replace(/\t/g,' ').replace(/\n/g,' '));
+        }
+        navigator.clipboard.writeText(filas.join('\n')).then(function(){
+          toast(registros.length+' filas copiadas. Pega con Ctrl+V en tu hoja.');
+        }).catch(function(){ toast('No se pudo copiar al portapapeles.'); });
+      }
+
+      function actualizarStorageBar() {
+        try {
+          var raw=localStorage.getItem(STORAGE_KEY)||'';
+          var bytes=raw.length*2; var kb=(bytes/1024).toFixed(1);
+          var el=document.getElementById('storage-size'); if(!el)return;
+          el.innerHTML='&#128190; '+kb+' KB';
+          el.className=bytes>3145728?'danger':(bytes>1572864?'warn':'');
+        } catch(e){}
+      }
+
+      function exportarBackup() {
+        try {
+          var raw=localStorage.getItem(STORAGE_KEY)||'[]';
+          var blob=new Blob([raw],{type:'application/json'});
+          var url=URL.createObjectURL(blob); var a=document.createElement('a');
+          var d=new Date();
+          a.href=url; a.download='qr-registro-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+          toast('Backup descargado.');
+        } catch(e){ toast('Error al exportar: '+e.message); }
+      }
+
+      function importarBackup(input) {
+        var file=input.files[0]; if(!file)return;
+        var reader=new FileReader();
+        reader.onload=function(e){
+          try {
+            var datos=JSON.parse(e.target.result);
+            if(!Array.isArray(datos)) throw new Error('Formato invalido');
+            var nuevos=0;
+            for(var i=0;i<datos.length;i++){
+              var existe=false;
+              for(var j=0;j<registros.length;j++){if(registros[j].id===datos[i].id){existe=true;break;}}
+              if(!existe){registros.push(datos[i]);nuevos++;}
+            }
+            guardarEnStorage(); renderList(); actualizarStorageBar();
+            toast(nuevos+' registros importados del backup.');
+          } catch(err){ toast('Error al cargar backup: '+err.message); }
+          input.value='';
+        };
+        reader.readAsText(file);
+      }
+
+      function ordenarRegistros() {
+        registros.sort(function(a,b){
+          var na=parseFloat(a.presentacion)||0; var nb=parseFloat(b.presentacion)||0;
+          if(na!==nb) return nb-na;
+          return b.presentacion.localeCompare(a.presentacion);
+        });
+      }
+
+      function guardarEnStorage() {
+        ordenarRegistros();
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(registros));
+        actualizarStorageBar();
+      }
+      function cargarDesdeStorage() {
+        try { var raw=localStorage.getItem(STORAGE_KEY); registros=raw?JSON.parse(raw):[]; ordenarRegistros(); }
+        catch(e){ registros=[]; }
+        actualizarStorageBar();
+      }
+
+      function limpiarFormulario() {
+        document.getElementById('txtPresentacion').value='20261100';
+        document.getElementById('txtDetalles').value='';
+        fileInput.value=''; qrTexto=''; qrBadge.classList.remove('show');
+      }
+
+      var toastTimer;
+      function toast(msg) {
+        var el=document.getElementById('toast'); el.innerHTML=msg; el.classList.add('show');
+        clearTimeout(toastTimer); toastTimer=setTimeout(function(){ el.classList.remove('show'); },2800);
+      }
+
+      function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+    </script>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js");
+      }
+    </script>
+
+
+  </body>
+</html>
