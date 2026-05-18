@@ -1,666 +1,1317 @@
 <!DOCTYPE html>
-<html>
+<html lang="es" data-theme="dark">
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Aranceles</title>
-    
-    
-    <!-- Manifest -->
+    <title>Registro QR</title>
     <link rel="manifest" href="/manifest.json">
-
-    <!-- Ícono para pestaña del navegador -->
     <link rel="icon" href="/icono.jpg" type="image/jpeg">
-    
-    <!-- Compatibilidad con iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="CNR-GMAPS">
+    <meta name="apple-mobile-web-app-title" content="QR-Registro">
     <link rel="apple-touch-icon" href="/icono.jpg">
-    
-    
-    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      * { box-sizing: border-box; }
+      /* ── TEMA OSCURO (default) ── */
+      :root {
+        --bg:          #07090f;
+        --surface:     #0e1117;
+        --surface2:    #141824;
+        --surface3:    #0d1520;
+        --border:      #1f2737;
+        --border-lit:  #2e3f5c;
+        --accent:      #3b82f6;
+        --accent-glow: rgba(59,130,246,0.15);
+        --green:       #22c55e;
+        --green-glow:  rgba(34,197,94,0.12);
+        --red:         #ef4444;
+        --text:        #e2e8f0;
+        --text-muted:  #64748b;
+        --text-dim:    #94a3b8;
+        --radius:      14px;
+        --storage-bg:  rgba(10,12,18,0.92);
+      }
 
-      body {
+      /* ── TEMA CLARO ── */
+      [data-theme="light"] {
+        --bg:          #f0f4f8;
+        --surface:     #ffffff;
+        --surface2:    #f8fafc;
+        --surface3:    #eef2f7;
+        --border:      #cbd5e1;
+        --border-lit:  #94a3b8;
+        --accent:      #2563eb;
+        --accent-glow: rgba(37,99,235,0.12);
+        --green:       #16a34a;
+        --green-glow:  rgba(22,163,74,0.10);
+        --red:         #dc2626;
+        --text:        #0f172a;
+        --text-muted:  #64748b;
+        --text-dim:    #475569;
+        --storage-bg:  rgba(240,244,248,0.95);
+      }
+
+      [data-theme="light"] body::before {
+        background:
+          radial-gradient(ellipse 55% 40% at 5% 0%,   rgba(37,99,235,0.06) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 30% at 95% 100%, rgba(22,163,74,0.05) 0%, transparent 70%);
+      }
+      [data-theme="light"] .item-bar    { background: var(--surface); }
+      [data-theme="light"] .cnr-block   { background: #f1f5f9; }
+      [data-theme="light"] #storage-bar { background: var(--storage-bg); border-color: var(--border); }
+      [data-theme="light"] #toast       { background: var(--surface); color: var(--text); }
+
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; min-height: 100vh; padding: 0 0 60px; transition: background 0.3s, color 0.3s; }
+      body::before {
+        content: ''; position: fixed; inset: 0; z-index: 0;
+        background:
+          radial-gradient(ellipse 55% 40% at 5% 0%,   rgba(59,130,246,0.07) 0%, transparent 70%),
+          radial-gradient(ellipse 40% 30% at 95% 100%, rgba(34,197,94,0.06)  0%, transparent 70%);
+        pointer-events: none; transition: background 0.3s;
+      }
+      .page { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; padding: 32px 20px 0; display: flex; flex-direction: column; gap: 24px; }
+
+      .header { display: flex; align-items: center; gap: 14px; }
+      .header-icon { width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent), #6366f1); border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; box-shadow: 0 4px 20px rgba(59,130,246,0.35); }
+      .header-text h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+      .header-text p  { font-size: 0.82rem; color: var(--text-muted); margin-top: 2px; }
+
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; transition: background 0.3s, border-color 0.3s; }
+      .card-title { font-size: 0.7rem; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; color: var(--accent); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+      .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+      .form-grid { display: grid; gap: 14px; }
+      .field { display: flex; flex-direction: column; gap: 6px; }
+      label { font-size: 0.78rem; font-weight: 500; color: var(--text-dim); letter-spacing: 0.3px; }
+      input[type="text"], textarea {
+        background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+        padding: 11px 14px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.93rem;
+        outline: none; transition: border-color 0.18s, box-shadow 0.18s, background 0.3s; width: 100%;
+      }
+      input[type="text"]:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+      input::placeholder, textarea::placeholder { color: var(--text-muted); }
+      textarea { resize: vertical; min-height: 72px; }
+
+      input.input-duplicado {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239,68,68,0.2) !important;
+      }
+
+      .drop-zone { position: relative; background: var(--surface2); border: 2px dashed var(--border); border-radius: 12px; padding: 22px 16px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; overflow: hidden; }
+      .drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: var(--accent-glow); }
+      .drop-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+      .drop-icon { font-size: 1.7rem; display: block; margin-bottom: 5px; }
+      .drop-label { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+      .drop-label strong { color: var(--accent); font-weight: 600; }
+
+      #qr-badge { display: none; align-items: center; gap: 10px; background: var(--green-glow); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 9px 13px; font-size: 0.76rem; color: var(--green); font-family: 'JetBrains Mono', monospace; word-break: break-all; line-height: 1.5; margin-top: 10px; }
+      #qr-badge.show { display: flex; animation: fade-in 0.25s ease; }
+
+      .btn-row { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+      .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; border: none; border-radius: 10px; font-family: 'Outfit', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: transform 0.12s, box-shadow 0.15s; white-space: nowrap; }
+      .btn:active { transform: scale(0.97); }
+      .btn-success { background: linear-gradient(135deg, var(--green), #16a34a); color: #fff; box-shadow: 0 4px 14px rgba(34,197,94,0.25); flex: 1; }
+      .btn-success:hover { box-shadow: 0 4px 22px rgba(34,197,94,0.4); }
+      .btn-import { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; box-shadow: 0 4px 14px rgba(99,102,241,0.25); flex: 1; }
+      .btn-import:hover { box-shadow: 0 4px 22px rgba(99,102,241,0.4); }
+
+      .btn-sm { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; font-size: 0.76rem; border-radius: 7px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; font-family: 'Outfit', sans-serif; font-weight: 500; transition: all 0.15s; white-space: nowrap; }
+      .btn-sm:hover            { border-color: var(--accent); color: var(--accent); }
+      .btn-sm.link-btn         { border-color: rgba(59,130,246,0.35); color: var(--accent); }
+      .btn-sm.link-btn:hover   { background: var(--accent-glow); }
+      .btn-sm.paste-btn        { border-color: rgba(245,158,11,0.4); color: #f59e0b; }
+      .btn-sm.paste-btn:hover  { background: rgba(245,158,11,0.1); }
+      .btn-sm.edit-btn         { border-color: rgba(99,102,241,0.4); color: #a78bfa; }
+      .btn-sm.edit-btn:hover   { background: rgba(99,102,241,0.1); }
+      .btn-sm.save-btn         { border-color: rgba(34,197,94,0.4); color: var(--green); }
+      .btn-sm.save-btn:hover   { background: var(--green-glow); }
+      .btn-sm.sheets-btn       { border-color: rgba(34,197,94,0.4); color: var(--green); }
+      .btn-sm.sheets-btn:hover { background: var(--green-glow); }
+      .btn-sm.danger           { border-color: rgba(239,68,68,0.4); color: var(--red); padding: 5px 9px; }
+      .btn-sm.danger:hover     { background: rgba(239,68,68,0.1); }
+
+      @keyframes fade-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes spin     { to { transform: rotate(360deg); } }
+
+      .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+      .list-count { font-size: 0.75rem; background: var(--border); color: var(--text-dim); padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+      #registro-list { display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+
+      .empty-state { text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 0.88rem; line-height: 1.7; }
+      .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5; }
+
+      .item { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; animation: fade-in 0.28s ease; transition: border-color 0.15s, background 0.3s; }
+      .item:hover { border-color: var(--border-lit); }
+      .item.hidden { display: none; }
+
+      .item-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border); border-left: 3px solid transparent; transition: background 0.3s, border-left-color 0.3s; }
+      .item-num { width: 30px; height: 30px; flex-shrink: 0; background: linear-gradient(135deg, var(--accent), #6366f1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 500; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); cursor: pointer; user-select: none; transition: background 0.3s; }
+      .item-num:hover { opacity: 0.85; }
+      .item-presentacion-bar { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; color: var(--text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+      .item-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+      .item-body.collapsed { display: none; }
+      .item-detalles { font-size: 0.8rem; color: var(--text-dim); line-height: 1.4; }
+
+      /* ── Selector de estado deslizable ── */
+      .estado-slider {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: var(--surface3);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .estado-slider-btn {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s, color 0.15s;
+        user-select: none;
+      }
+      .estado-slider-btn:hover { background: var(--border); color: var(--text); }
+      .estado-slider-btn:active { background: var(--border-lit); }
+      .estado-slider-display {
+        flex: 1;
         display: flex;
         flex-direction: column;
         align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px;
-        background: #f0f2f5;
-        font-family: Arial, sans-serif;
+        justify-content: center;
+        padding: 4px 6px;
+        min-height: 36px;
+        gap: 1px;
       }
-
-      .tittle {
-        font-size: 1.3em;
-        font-weight: bold;
-        color: #2c3e50;
-        margin-bottom: 12px;
-        letter-spacing: 1px;
-        text-align: center;   /* centra el texto horizontalmente */
+      .estado-slider-nombre {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-align: center;
+        line-height: 1.2;
+        transition: color 0.2s;
       }
-
-      #contenidoTabla_ca {
-        background: #fff;
-        border-radius: 8px;
-        padding: 18px 22px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.09);
-        min-width: 340px;
-      }
-
-      table#borderedTable {
-        width: 100%;
-        max-width: 600px;
-      }
-
-      h3 { margin: 4px 0; }
-
-      input[type="radio"] { margin-right: 4px; }
-
-      select, input[type="text"] {
-        border: 1px solid #bbb;
-        border-radius: 4px;
-        padding: 3px 7px;
-        font-size: 0.97em;
-      }
-
-      input[type="button"] {
-        background: #2c7be5;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        padding: 7px 18px;
-        font-size: 0.97em;
-        cursor: pointer;
-        margin: 3px;
-        transition: background 0.18s;
-      }
-      input[type="button"]:hover:not(:disabled) { background: #1a5fb4; }
-      input[type="button"]:disabled { background: #aaa; cursor: default; }
-
-      #btn-agregar {
-        background: #27ae60;
-        margin-top: 6px;
-      }
-      #btn-agregar:hover:not(:disabled) { background: #1e8449; }
-
-      /* ── Historial ── */
-      #historial-section {
-        width: 100%;
-        max-width: 600px;
-        background: #fff;
-        border-radius: 8px;
-        padding: 16px 20px;
-        margin-top: 18px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.09);
-      }
-
-      #historial-section h4 {
-        margin: 0 0 10px 0;
-        color: #2c3e50;
-        font-size: 1em;
+      .estado-slider-origen {
+        font-size: 0.6rem;
+        color: var(--text-muted);
         letter-spacing: 0.5px;
-        border-bottom: 2px solid #e8ecf0;
-        padding-bottom: 7px;
+        text-transform: uppercase;
       }
-
-      #lista-aranceles {
-        list-style: none;
-        padding: 0;
-        margin: 0 0 10px 0;
-        max-height: 240px;
-        overflow-y: auto;
-      }
-
-      #lista-aranceles li {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 7px 10px;
-        border-radius: 5px;
-        margin-bottom: 5px;
-        background: #f7f9fc;
-        border-left: 4px solid #2c7be5;
-        font-size: 0.93em;
-        color: #333;
-        gap: 8px;
-      }
-
-      #lista-aranceles li:nth-child(even) { background: #eef2f8; }
-
-      .li-desc { flex: 1; }
-      .li-monto { font-weight: bold; color: #2c7be5; white-space: nowrap; }
-      .li-pago  { font-weight: bold; color: #27ae60; white-space: nowrap; }
-
-      .btn-eliminar {
+      .estado-slider-reset {
+        flex-shrink: 0;
+        width: 28px;
+        height: 36px;
         background: none;
         border: none;
-        color: #c0392b;
+        border-left: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 0.7rem;
         cursor: pointer;
-        font-size: 1.1em;
-        padding: 0 4px;
-        line-height: 1;
-        flex-shrink: 0;
-      }
-      .btn-eliminar:hover { color: #922b21; }
-
-      #historial-vacio {
-        color: #aaa;
-        font-size: 0.9em;
-        text-align: center;
-        padding: 12px 0;
-      }
-
-      #total-row {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        border-top: 2px solid #e8ecf0;
-        padding-top: 9px;
-        margin-top: 4px;
+        justify-content: center;
+        transition: background 0.15s, color 0.15s;
+        title: 'Quitar estado manual';
       }
+      .estado-slider-reset:hover { background: rgba(239,68,68,0.1); color: var(--red); }
 
-      #total-label { font-weight: bold; color: #2c3e50; font-size: 0.97em; }
-      #total-valor { font-weight: bold; color: #27ae60; font-size: 1.1em; }
+      .cnr-block { background: var(--surface3); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; transition: background 0.3s; }
+      .cnr-section-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent); padding: 7px 11px 5px; border-bottom: 1px solid var(--border); }
+      .cnr-rows { padding: 8px 11px; display: flex; flex-direction: column; gap: 5px; }
+      .cnr-row { display: flex; gap: 8px; font-size: 0.76rem; line-height: 1.4; }
+      .cnr-label { color: var(--text-muted); flex-shrink: 0; min-width: 78px; }
+      .cnr-value { color: var(--text-dim); word-break: break-word; }
+      .cnr-value.estado-valor { color: var(--green); font-weight: 600; }
+      .cnr-empty { padding: 10px 11px; font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
+      .paste-spin { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--border-lit); border-top-color: #f59e0b; border-radius: 50%; animation: spin 0.7s linear infinite; }
 
-      #btn-limpiar-hist {
-        background: #c0392b;
-        margin-top: 12px;
-        width: 100%;
+      .edit-wrap { display: none; padding: 10px 0 4px; }
+      .edit-wrap.visible { display: block; }
+      .edit-lbl { font-size: 0.66rem; color: var(--text-muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+      .edit-field-gap { margin-bottom: 8px; }
+      .edit-actions { display: flex; gap: 8px; margin-top: 8px; }
+
+      .item-timestamp { font-size: 0.67rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+      .item-bottom-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+      .search-wrap { position: relative; margin-bottom: 14px; }
+      .search-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 36px 10px 14px; color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.18s, box-shadow 0.18s, background 0.3s; }
+      .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+      .search-input::placeholder { color: var(--text-muted); }
+      .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); font-size: 1rem; cursor: pointer; padding: 4px; display: none; }
+      .search-clear.visible { display: block; }
+      .search-count { font-size: 0.7rem; color: var(--text-muted); margin-top: 6px; min-height: 16px; }
+
+      #storage-bar {
+        position: fixed; bottom: 0; left: 0;
+        display: flex; align-items: center; gap: 8px; padding: 5px 12px;
+        background: var(--storage-bg);
+        border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+        border-radius: 0 8px 0 0;
+        font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted);
+        z-index: 998; backdrop-filter: blur(6px);
+        transition: background 0.3s, border-color 0.3s;
       }
-      #btn-limpiar-hist:hover { background: #922b21; }
+      #storage-size { color: var(--text-dim); white-space: nowrap; }
+      #storage-size.warn   { color: #f59e0b; }
+      #storage-size.danger { color: var(--red); }
+      .storage-btn { background: none; border: 1px solid var(--border); border-radius: 5px; color: var(--text-muted); font-size: 0.68rem; padding: 2px 7px; cursor: pointer; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; white-space: nowrap; }
+      .storage-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-      #emphasis1 { color: #555; font-size: 0.88em; }
-      #emphasis2 { font-size: 1.15em; font-weight: bold; color: #27ae60; }
+      #theme-toggle { background: none; border: 1px solid var(--border); border-radius: 5px; cursor: pointer; font-size: 0.9rem; padding: 1px 6px; line-height: 1.4; transition: all 0.2s; user-select: none; }
+      #theme-toggle:hover { border-color: var(--accent); transform: scale(1.15); }
 
-      .pago-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .bar-sep { width: 1px; height: 14px; background: var(--border); flex-shrink: 0; }
+
+      #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border-lit); color: var(--text); font-size: 0.83rem; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 999; white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+      #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+      canvas { display: none; }
     </style>
   </head>
+  <body>
+    <div class="page">
 
-  <script language="javascript" type="text/javascript">
-    Number.formatFunctions = {count:0};
-    Number.prototype.NaN         = 'NaN';
-    Number.prototype.posInfinity = 'Infinity';
-    Number.prototype.negInfinity = '-Infinity';
-    Number.prototype.numberFormat = function(format, context) {
-      if (isNaN(this))          return Number.prototype.NaNstring;
-      if (this == +Infinity)    return Number.prototype.posInfinity;
-      if (this == -Infinity)    return Number.prototype.negInfinity;
-      if (Number.formatFunctions[format] == null) Number.createNewFormat(format);
-      return this[Number.formatFunctions[format]](context);
-    };
-    Number.createNewFormat = function(format) {
-      var funcName = "format" + Number.formatFunctions.count++;
-      Number.formatFunctions[format] = funcName;
-      var code = "Number.prototype." + funcName + " = function(context){\n";
-      var formats = format.split(";");
-      switch (formats.length) {
-        case 1: code += Number.createTerminalFormat(format); break;
-        case 2:
-          code += "return (this < 0) ? this.numberFormat(\"" + String.escape(formats[1]) + "\", 1) : this.numberFormat(\"" + String.escape(formats[0]) + "\", 2);";
-          break;
-        case 3:
-          code += "return (this < 0) ? this.numberFormat(\"" + String.escape(formats[1]) + "\", 1) : ((this == 0) ? this.numberFormat(\"" + String.escape(formats[2]) + "\", 2) : this.numberFormat(\"" + String.escape(formats[0]) + "\", 3));";
-          break;
-        default: code += "throw 'Too many semicolons in format string';"; break;
-      }
-      eval(code + "}");
-    };
-    Number.createTerminalFormat = function(format) {
-      if (format.length > 0 && format.search(/[0#?]/) == -1) return "return '" + String.escape(format) + "';\n";
-      var code = "var val = (context == null) ? new Number(this) : Math.abs(this);\n";
-      var thousands = false, lodp = format, rodp = "", ldigits = 0, rdigits = 0, scidigits = 0, scishowsign = false, sciletter = "";
-      var m = format.match(/\..*(e)([+-]?)(0+)/i);
-      if (m) { sciletter = m[1]; scishowsign = (m[2] == "+"); scidigits = m[3].length; format = format.replace(/(e)([+-]?)(0+)/i, ""); }
-      m = format.match(/^([^.]*)\.(.*)$/);
-      if (m) { lodp = m[1].replace(/\./g, ""); rodp = m[2].replace(/\./g, ""); }
-      if (format.indexOf('%') >= 0) code += "val *= 100;\n";
-      m = lodp.match(/(,+)(?:$|[^0#?,])/);
-      if (m) code += "val /= " + Math.pow(1000, m[1].length) + "\n;";
-      if (lodp.search(/[0#?],[0#?]/) >= 0) thousands = true;
-      if ((m) || thousands) lodp = lodp.replace(/,/g, "");
-      m = lodp.match(/0[0#?]*/); if (m) ldigits = m[0].length;
-      m = rodp.match(/[0#?]*/);  if (m) rdigits = m[0].length;
-      if (scidigits > 0) {
-        code += "var sci = Number.toScientific(val," + ldigits + ", " + rdigits + ", " + scidigits + ", " + scishowsign + ");\nvar arr = [sci.l, sci.r];\n";
-      } else {
-        if (format.indexOf('.') < 0) code += "val = (val > 0) ? Math.ceil(val) : Math.floor(val);\n";
-        code += "var arr = val.round(" + rdigits + ").toFixed(" + rdigits + ").split('.');\n";
-        code += "arr[0] = (val < 0 ? '-' : '') + String.leftPad((val < 0 ? arr[0].substring(1) : arr[0]), " + ldigits + ", '0');\n";
-      }
-      if (thousands) code += "arr[0] = Number.addSeparators(arr[0]);\n";
-      code += "arr[0] = Number.injectIntoFormat(arr[0].reverse(), '" + String.escape(lodp.reverse()) + "', true).reverse();\n";
-      if (rdigits > 0) code += "arr[1] = Number.injectIntoFormat(arr[1], '" + String.escape(rodp) + "', false);\n";
-      if (scidigits > 0) code += "arr[1] = arr[1].replace(/(\\d{" + rdigits + "})/, '$1" + sciletter + "' + sci.s);\n";
-      return code + "return arr.join('.');\n";
-    };
-    Number.toScientific = function(val, ldigits, rdigits, scidigits, showsign) {
-      var result = {l:"", r:"", s:""};
-      var before = Math.abs(val).toFixed(ldigits + rdigits + 1).trim('0');
-      var after = Math.round(new Number(before.replace(".", "").replace(new RegExp("(\\d{" + (ldigits + rdigits) + "})(.*)"), "$1.$2"))).toFixed(0);
-      if (after.length >= ldigits) after = after.substring(0, ldigits) + "." + after.substring(ldigits);
-      else after += '.';
-      result.s = (before.indexOf(".") - before.search(/[1-9]/)) - after.indexOf(".");
-      if (result.s < 0) result.s++;
-      result.l = (val < 0 ? '-' : '') + String.leftPad(after.substring(0, after.indexOf(".")), ldigits, "0");
-      result.r = after.substring(after.indexOf(".") + 1);
-      var ex = result.s < 0 ? "-" : (showsign ? "+" : "");
-      result.s = ex + String.leftPad(Math.abs(result.s).toFixed(0), scidigits, "0");
-      return result;
-    };
-    Number.prototype.round = function(decimals) {
-      if (decimals > 0) {
-        var m = this.toFixed(decimals + 1).match(new RegExp("(-?\\d*)\.(\\d{" + decimals + "})(\\d)\\d*$"));
-        if (m && m.length) return new Number(m[1] + "." + String.leftPad(Math.round(m[2] + "." + m[3]), decimals, "0"));
-      }
-      return this;
-    };
-    Number.injectIntoFormat = function(val, format, stuffExtras) {
-      var i = 0, j = 0, result = "";
-      var revneg = val.charAt(val.length - 1) == '-';
-      if (revneg) val = val.substring(0, val.length - 1);
-      while (i < format.length && j < val.length && format.substring(i).search(/[0#?]/) >= 0) {
-        if (format.charAt(i).match(/[0#?]/)) {
-          result += (val.charAt(j) != '-') ? val.charAt(j) : "0";
-          j++;
-        } else result += format.charAt(i);
-        ++i;
-      }
-      if (revneg && j == val.length) result += '-';
-      if (j < val.length) { if (stuffExtras) result += val.substring(j); if (revneg) result += '-'; }
-      if (i < format.length) result += format.substring(i);
-      return result.replace(/#/g, "").replace(/\?/g, " ");
-    };
-    Number.addSeparators = function(val) { return val.reverse().replace(/(\d{3})/g, "$1,").reverse().replace(/^(-)?,/, "$1"); };
-    String.prototype.reverse = function() { var res = ""; for (var i = this.length; i > 0; --i) res += this.charAt(i - 1); return res; };
-    String.prototype.trim = function(ch) { if (!ch) ch = ' '; return this.replace(new RegExp("^" + ch + "+|" + ch + "+$", "g"), ""); };
-    String.leftPad = function(val, size, ch) { var result = new String(val); if (ch == null) ch = " "; while (result.length < size) result = ch + result; return result; };
-    String.escape = function(string) { return string.replace(/('|\\)/g, "\$1"); };
-
-    /* ── Tarifa ── */
-    var TInsc = new Array(0.63, 0.38, 0.63, 0.63, 0.63, 0.38, -2, -2, -1.0);
-    var TCanc = new Array(-2, -1, -3);
-    var rango  = new Array(0.0,1800.0,1.8,0.0, 1800.0,4500.0,3.6,0.0, 4500.0,9000.0,5.4,0.0, 9000.0,10000000000.0,5.4,0.13);
-    var tasafija = new Array(8.86, 5.71);
-    var maxmin   = new Array(8.86, 5400, 5.71, 5400);
-
-    function cnrUtil_tasaCP(v) {
-      for (var i = 0; i < 4; i++) if (v > rango[i*4] && v <= rango[i*4+1]) return rango[i*4+2] + cnrUtil_centenas(v-9000.00)*rango[i*4+3];
-      return -1;
-    }
-    function cnrUtil_round(ta) { return ta.numberFormat('#,###,###,###.##'); }
-    function cnrUtil_centenas(v) {
-      if (v <= 0) return 0;
-      var mpre = v/100, mont = mpre.numberFormat('#,###,###,###.####'), idx = mont.indexOf('.');
-      if (idx >= 0) { var dec = parseFloat(mont.substring(idx)) > 0 ? Math.floor(mpre)+1 : Math.floor(mpre); return dec; }
-      return parseInt(""+mpre);
-    }
-    function CalArancel(vars1, vars2, vars3, vars4, vars5) {
-      var tasa=0, vpre=0, fact=1, pago="";
-      var v_monto = parseFloat(""+vars5);
-      if (parseInt(vars2)==1 && parseInt(vars1)==1) fact = v_monto>15000 ? 1 : 0.25;
-      switch(parseInt(vars3)) {
-        case 0:
-          tasa = TInsc[parseInt(vars4)];
-          if (tasa==-1) vpre = cnrUtil_tasaCP(v_monto)*fact;
-          else if (tasa==-2) { tasa = parseInt(vars1)==1 ? tasafija[1] : tasafija[0]; vpre = tasa*fact; }
-          else vpre = cnrUtil_centenas(v_monto)*cnrUtil_round(tasa*fact);
-          break;
-        case 1:
-          tasa = TCanc[parseInt(vars4)];
-          if (tasa==-1) { vpre = cnrUtil_tasaCP(v_monto)*fact; if(vpre>8.91) vpre=8.91; }
-          else if (tasa==-2) { tasa = parseInt(vars1)==1 ? tasafija[1] : tasafija[0]; vpre = tasa*fact; }
-          else { vpre = v_monto<=9000 ? (v_monto>0 ? 8.91*fact : 0) : (8.91+0.13*cnrUtil_centenas(v_monto-9000))*fact; }
-          break;
-      }
-      if (v_monto>0 || vpre>0) {
-        if (parseInt(vars1)==1) {
-          if (parseInt(vars2)==1) { if(vpre<maxmin[2]&&tasa!=-1) vpre=maxmin[2]; if(vpre>maxmin[3]) vpre=maxmin[3]; }
-          else { if(vpre<maxmin[0]&&tasa!=-1) vpre=maxmin[0]; if(vpre>maxmin[1]) vpre=maxmin[1]; }
-        } else { if(vpre<maxmin[0]&&tasa!=-1) vpre=maxmin[0]; if(vpre>maxmin[1]) vpre=maxmin[1]; }
-        pago = vpre.numberFormat('##########.##');
-      } else pago = "0.00";
-      return pago;
-    }
-
-    /* ── Historial ── */
-    var historial = [];
-
-    function cargarHistorial() {
-      var raw = localStorage.getItem("historial_aranceles");
-      historial = raw ? JSON.parse(raw) : [];
-      renderHistorial();
-    }
-
-    function guardarHistorial() {
-      localStorage.setItem("historial_aranceles", JSON.stringify(historial));
-    }
-
-    function agregarAlHistorial() {
-      var pagoTxt = document.getElementById("emphasis2").childNodes[0].nodeValue;
-      if (!pagoTxt || pagoTxt === "." || pagoTxt === "") { alert("Primero calcule un arancel."); return; }
-
-      var servicio     = document.formulario.tservicio.options[document.formulario.tservicio.selectedIndex].text;
-      var transaccion  = document.formulario.p_TRANSACCION.options[document.formulario.p_TRANSACCION.selectedIndex].text;
-      var monto        = document.formulario.var5.value;
-
-      historial.push({ servicio: servicio, transaccion: transaccion, monto: monto, pago: pagoTxt });
-      guardarHistorial();
-      renderHistorial();
-    }
-
-    function eliminarItem(idx) {
-      historial.splice(idx, 1);
-      guardarHistorial();
-      renderHistorial();
-    }
-
-    function renderHistorial() {
-      var ul = document.getElementById("lista-aranceles");
-      var vacio = document.getElementById("historial-vacio");
-      ul.innerHTML = "";
-
-      if (historial.length === 0) {
-        vacio.style.display = "block";
-        document.getElementById("total-valor").textContent = "US$ 0.00";
-        return;
-      }
-      vacio.style.display = "none";
-
-      var total = 0;
-      historial.forEach(function(item, i) {
-        var li = document.createElement("li");
-        li.innerHTML =
-          '<span class="li-desc"><b>' + item.servicio + '</b> &mdash; ' + item.transaccion + '<br><small>Monto: US$ ' + item.monto + '</small></span>' +
-          '<span class="li-pago">US$ ' + item.pago + '</span>' +
-          '<button class="btn-eliminar" title="Eliminar" onclick="eliminarItem(' + i + ')">✕</button>';
-        ul.appendChild(li);
-        total += parseFloat(item.pago) || 0;
-      });
-
-      document.getElementById("total-valor").textContent = "US$ " + total.toFixed(2);
-    }
-
-    function limpiarHistorial() {
-      if (!confirm("¿Desea limpiar todo el historial de aranceles?")) return;
-      historial = [];
-      localStorage.removeItem("historial_aranceles");
-      renderHistorial();
-    }
-
-    /* ── Form ── */
-    function calcular(var1, var2, var3, var4, var5) {
-      if (var3==0) { alert('Seleccione un Servicio.'); return; }
-      if (var4==0) { alert('Seleccione una Transaccion.'); return; }
-      if (var5==0) { document.formulario.var5.focus(); alert('El Monto no puede ser cero.'); return; }
-      var5 = var5.replace(',','');
-      var monto = parseFloat(""+var5);
-      if (monto==0 || isNaN(monto)) { document.formulario.var5.focus(); alert('El Monto debe ser numerico, ej: 2500.50.'); return; }
-      document.formulario.var5.value = monto.numberFormat('#,###,###,###.##');
-      var pago = CalArancel(""+var1,""+var2,""+(var3-1),""+(var4-1),""+var5);
-      document.getElementById("emphasis2").childNodes[0].nodeValue = ""+pago;
-      guardarAjustes();
-    }
-
-    function guardarAjustes() {
-      localStorage.setItem("var1", document.formulario.var1.value);
-      localStorage.setItem("var2", document.formulario.var2.value);
-      localStorage.setItem("var3", document.formulario.var3.value);
-      localStorage.setItem("var4", document.formulario.var4.value);
-      localStorage.setItem("var5", document.formulario.var5.value);
-      localStorage.setItem("tservicio", document.formulario.tservicio.selectedIndex);
-      localStorage.setItem("p_TRANSACCION", document.formulario.p_TRANSACCION.selectedIndex);
-      var t = document.formulario.p_TRANSACCION.options[document.formulario.p_TRANSACCION.selectedIndex];
-      localStorage.setItem("transaccion_nombre", t.text);
-      localStorage.setItem("transaccion_valor", t.value);
-      localStorage.setItem("radio", document.formulario.radio[0].checked ? "0" : "1");
-    }
-
-    function cargarAjustes() {
-      if (localStorage.getItem("var1") !== null) {
-        document.formulario.var1.value = localStorage.getItem("var1");
-        document.formulario.var2.value = localStorage.getItem("var2");
-        document.formulario.var3.value = localStorage.getItem("var3");
-        document.formulario.var4.value = localStorage.getItem("var4");
-        document.formulario.var5.value = localStorage.getItem("var5");
-        document.formulario.tservicio.selectedIndex = localStorage.getItem("tservicio");
-        ComponerLista(document.formulario.tservicio, document.formulario.p_TRANSACCION);
-        var valor = localStorage.getItem("transaccion_valor");
-        if (valor) {
-          for (var i = 0; i < document.formulario.p_TRANSACCION.options.length; i++) {
-            if (document.formulario.p_TRANSACCION.options[i].value === valor) { document.formulario.p_TRANSACCION.selectedIndex = i; break; }
-          }
-        }
-        localStorage.getItem("radio")==="0" ? (document.formulario.radio[0].checked=true) : (document.formulario.radio[1].checked=true);
-        ModificarTexto(document.formulario.tservicio, document.formulario.p_TRANSACCION);
-        document.formulario.var5.disabled = false;
-        document.formulario.operar.disabled = false;
-        document.formulario.p_TPROYECTO.disabled = false;
-      }
-    }
-
-    function limpiarform() {
-      document.formulario.var1.value = 0;
-      document.formulario.var2.value = 0;
-      document.formulario.var3.value = 0;
-      document.formulario.var4.value = 0;
-      document.formulario.var5.value = 0.00;
-      document.getElementById("emphasis2").childNodes[0].nodeValue = "";
-      document.getElementById("emphasis1").childNodes[0].nodeValue = "";
-      document.formulario.tservicio.selectedIndex = 0;
-      document.formulario.p_TPROYECTO.selectedIndex = 0;
-      document.formulario.p_TRANSACCION.selectedIndex = 0;
-      document.formulario.radio[0].checked = true;
-    }
-
-    /* ── Listas ── */
-    var numListas = 3, raiz=[], nad=[], ins=[], can=[], cer=[], inf=[], pre=[], sus=[], cerrsi=[];
-    function eh(n,v){this.nombre=n;this.valor=v;}
-    function ep(n,v,d){this.nombre=n;this.valor=v;this.datos=d;}
-
-    nad[0]=new eh("Seleccione","0");
-    ins[0]=new eh("Seleccione","0"); ins[1]=new eh("Transferencia y mod. de dominio","1"); ins[2]=new eh("Gravamenes","2");
-    ins[3]=new eh("Hipotecas abiertas","3"); ins[4]=new eh("Cesiones de credito","4"); ins[5]=new eh("Titulos supletorios","5");
-    ins[6]=new eh("Modificaciones","6"); ins[7]=new eh("Otras modificaciones","7"); ins[8]=new eh("Anotaciones y declaratorias","8");
-    ins[9]=new eh("Creditos a la produccion","9"); ins[10]=new eh("Desmembracion o modificacion","10");
-    ins[11]=new eh("Regimen de propiedad inmobiliaria","11"); ins[12]=new eh("Remediciones y reuniones","12"); ins[13]=new eh("Particiones de inmuebles","13");
-    can[0]=new eh("Seleccione","0"); can[1]=new eh("Anotacion preventiva","1"); can[2]=new eh("Credito a la produccion","2"); can[3]=new eh("Otras cancelaciones","3");
-    cer[0]=new eh("Seleccione","0"); cer[1]=new eh("Literales","1"); cer[2]=new eh("Extractadas","2"); cer[3]=new eh("Otras certificaciones","3"); cer[4]=new eh("Carencia de bienes","4"); cer[5]=new eh("Plano de lotificacion","5");
-    cerrsi[0]=new eh("Seleccione","0"); cerrsi[1]=new eh("Extractadas","1"); cerrsi[2]=new eh("Otras certificaciones","2"); cerrsi[3]=new eh("Carencia de bienes","3"); cerrsi[4]=new eh("Plano de lotificacion","4");
-    inf[0]=new eh("Seleccione","0"); inf[1]=new eh("Indice de propietarios","1");
-    pre[0]=new eh("Seleccione","0"); pre[1]=new eh("Nueva presentacion","1");
-    sus[0]=new eh("Seleccione","0"); sus[1]=new eh("Sustitucion de folios","1");
-    raiz[0]=new ep("Seleccione","0",nad); raiz[1]=new ep("Inscripcion","1",ins); raiz[2]=new ep("Cancelacion","2",can);
-    raiz[3]=new ep("Certificaciones","3",cer); raiz[4]=new ep("Informe","4",inf); raiz[5]=new ep("Presentacion","5",pre); raiz[6]=new ep("Sustitucion","6",sus);
-
-    function inicioPagina() {
-      var lista = document.getElementById("tservicio");
-      lista.options.length = 0;
-      for (var x=0;x<raiz.length;x++) { var o=document.createElement("option"); o.text=raiz[x].nombre; o.value=raiz[x].valor; lista.options.add(o); }
-    }
-
-    function TipoProyecto(tp) {
-      document.formulario.var2.value = tp.selectedIndex;
-      if (document.formulario.var3.value>0 && document.formulario.var4.value>0) ModificarTexto(document.formulario.tservicio,document.formulario.p_TRANSACCION);
-    }
-
-    function ComponerLista(lp, lh) {
-      var lentHija=lh.length;
-      document.getElementById("emphasis2").childNodes[0].nodeValue="";
-      for(var x=0;x<lentHija;x++) lh.remove(0);
-      var xPadre=lp.selectedIndex, llenar;
-      if(xPadre!=null) {
-        document.formulario.var3.value=lp.options[xPadre].value;
-        document.formulario.var4.value=0;
-        var v=lp.options[xPadre].value;
-        if(v=="0"){llenar=nad;document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.formulario.var5.value=0.00;}
-        if(v=="1") llenar=ins;
-        if(v=="2") llenar=can;
-        if(v=="3"){llenar=(document.formulario.var1.value==0)?cer:cerrsi;document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.formulario.var5.value=0.00;}
-        if(v=="4"){llenar=inf;document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.formulario.var5.value=0.00;}
-        if(v=="5"){llenar=pre;document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.formulario.var5.value=0.00;}
-        if(v=="6"){llenar=sus;document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.formulario.var5.value=0.00;}
-        document.getElementById("emphasis1").childNodes[0].nodeValue="";
-        for(var x=0;x<llenar.length;x++){var o=document.createElement("OPTION");o.text=llenar[x].nombre;o.value=llenar[x].valor;lh.options.add(o);}
-      }
-    }
-
-    function EstableceEstado(oficina) {
-      document.formulario.var1.value = parseInt(oficina)==1 ? "0" : "1";
-      if(document.formulario.var3.value=="3") ComponerLista(document.formulario.tservicio,document.formulario.p_TRANSACCION);
-      ModificarTexto(document.formulario.tservicio,document.formulario.p_TRANSACCION);
-      if(document.formulario.radio[0].checked){document.formulario.p_TPROYECTO.selectedIndex=0;document.formulario.var2.value=0;document.formulario.p_TPROYECTO.disabled=true;}
-      else document.formulario.p_TPROYECTO.disabled=false;
-    }
-
-    function Deshabilita(){document.formulario.p_TPROYECTO.selectedIndex=-1;document.formulario.p_TPROYECTO.disabled=true;}
-
-    function iniciarAplicacion(){inicioPagina();cargarAjustes();Deshabilita();cargarHistorial();}
-
-    function ModificarTexto(lp,lh){
-      var xP=lp.selectedIndex,xH=lh.selectedIndex;
-      if(xH==null) return;
-      document.formulario.var4.value=lh.options[xH].value;
-      var pv=lp.options[xP].value, hv=lh.options[xH].value;
-      var txt="";
-      if(pv=="1"){
-        var map={"1":"Compraventas, donaciones, adjudicaciones o daciones en pago, traspasos por herencia y cualesquiera otros instrumentos, actos o contratos que produzcan transferencia o transmision de dominio.Usufructos, Arrendamientos, fideicomisos, anticresis y cualesquiera otros instrumentos, actos o contratos que produzcan modificaciones en el dominio. ","2":"Hipotecas, Servidumbres, Prendas Mercantiles o Agricolas y Anotaciones de Embargo.","3":"Hipotecas Abiertas. ","4":"Cesiones de credito. ","5":"Titulos supletorios. ","6":"Modificaciones en cuanto a la Cuantia de Hipotecas, servidumbres, prendas mercantiles o agricolas, Hipotecas Abiertas, Usufructos, Arrendamientos, fideicomisos, anticresis y cualesquiera otros instrumentos, actos o contratos que produzcan modificaciones en el dominio. ","7":"Cualquier otra Modificacion de Hipotecas, servidumbres, prendas mercantiles o agricolas, Hipotecas Abiertas, Usufructos, Arrendamientos, fideicomisos, anticresis y cualesquiera otros instrumentos, actos o contratos que produzcan modificaciones en el dominio. ","8":"Anotaciones de cualquier naturaleza, Declaratoria de Herederos, Declaraciones Juradas. ","9":"Creditos a la Produccion. "};
-        var fixedMap={"10":"Por desmembraciones en cabeza de su dueño o modificaciones de las mismas con o sin transferencia de dominio, se pagara por cada lote o parcela $9.70 con un minimo de $34.29. ","11":"Por la Inscripcion de inmuebles en el Regimen de Propiedad Inmobiliaria por Pisos y Apartamentos, se pagara por cada lote o parcela $9.70 con un minimo de $54.91. ","12":"Por remediciones y reuniones de inmuebles, se pagara por cada lote o parcela $9.70 con un minimo de $34.29. ","13":"Por particiones de inmuebles, se pagara por cada lote o parcela resultante $9.70 con un minimo de $34.29. "};
-        if(map[hv]){txt=map[hv];document.formulario.var5.disabled=false;document.formulario.operar.disabled=false;}
-        if(fixedMap[hv]){txt=fixedMap[hv];document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.getElementById("emphasis2").childNodes[0].nodeValue="";document.formulario.var5.value=0.00;}
-      }
-      if(pv=="2"){
-        var map2={"1":"Cancelacion de Anotaciones de cualquier naturaleza y Anotaciones de Embargo. ","2":"Cancelacion de Credito a la Produccion. ","3":"Cancelaciones de Usufructos, Arrendamientos, fideicomisos, anticresis y cualesquiera otros instrumentos, actos o contratos que produzcan modificaciones en el dominio.Hipotecas, Hipotecas abiertas, Servidumbres, Prendas Mercantiles o Agricolas. "};
-        if(map2[hv]){txt=map2[hv];document.formulario.var5.disabled=false;document.formulario.operar.disabled=false;}
-      }
-      if(pv=="3"){
-        var map3={"1":"Por certificaciones literales de inscripciones se pagara $8.86 mas $0.35 por cada una de las hojas de que conste la respectiva certificacion. ","2":"Por cada certificacion en relacion o extractada de una inscripcion, se pagara $8.86. ","3":"Por cada certificacion distinta de literales o extractadas, se pagara $8.86. ","4":"Por cada certificacion de carencia de bienes, se pagara $1.77 por titular, no obstante lo dispuesto en el primer inciso del articulo 50-A. ","5":"Por cada certificacion de un plano de lotificacion, se pagara $ 8.86, mas $0.14 por cada lote comprendido en el plano. "};
-        if(map3[hv]) txt=map3[hv];
-        document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.getElementById("emphasis2").childNodes[0].nodeValue="";document.formulario.var5.value=0.00;
-      }
-      if(pv=="4"){if(hv=="1") txt="Por los informes de indice de propietarios, $0.71 por titular, no obstante lo dispuesto en el primer inciso del articulo 50-A. ";document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.getElementById("emphasis2").childNodes[0].nodeValue="";document.formulario.var5.value=0.00;}
-      if(pv=="5"){if(hv=="1") txt="Por cada nueva presentacion se pagara $ 8.86, excepto si el instrumento ha sido Retirado Sin Inscribir y vuelto a presentar dentro de los treinta dias despues de su retiro.";document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;}
-      if(pv=="6"){if(hv=="1") txt="Si fuese necesario sustituir folios de los instrumentos, sentencias o diligencias presentados a inscripcion, se pagara $2.30 por cada hoja que haya de sustituirse. ";document.formulario.var5.disabled=true;document.formulario.operar.disabled=true;document.getElementById("emphasis2").childNodes[0].nodeValue="";document.formulario.var5.value=0.00;}
-      document.getElementById("emphasis1").childNodes[0].nodeValue=txt;
-      if(document.formulario.var2.value==1 && document.formulario.var1.value==1)
-        document.getElementById("emphasis1").childNodes[0].nodeValue+="\nPor ser proyecto de interes Social pagara el 25% cuando no sobrepase los $15,000.00.";
-    }
-
-    function enter(e){var kc=(navigator.appName=="Netscape")?e.which:event.keyCode;if(kc==13)document.formulario.operar.click();}
-    document.onkeydown=enter;
-    if(navigator.appName=="Netscape") document.captureEvents(Event.KEYDOWN);
-
-    function consultar_bt(e,v1,v2,v3,v4,v5,goods){
-      var code;
-      if(!e) e=window.event;
-      if(e.keyCode) code=e.keyCode; else if(e.which) code=e.which;
-      if(code==null) return true;
-      if(code==13){calcular(document.formulario.var1.value,document.formulario.var2.value,document.formulario.var3.value,document.formulario.var4.value,document.formulario.var5.value);return;}
-      var kc=String.fromCharCode(code).toLowerCase();
-      if(goods.toLowerCase().indexOf(kc)!=-1) return true;
-      if(code==null||code==0||code==8||code==9||code==13||code==27) return true;
-      return false;
-    }
-  </script>
-
-  <body onload="iniciarAplicacion()">
-    <form accept-charset="utf-8"
-          action="javascript:calcular(document.formulario.var1.value,document.formulario.var2.value,document.formulario.var3.value,document.formulario.var4.value,document.formulario.var5.value)"
-          id="formulario" name="formulario"
-          onSubmit="calcular(document.formulario.var1.value,document.formulario.var2.value,document.formulario.var3.value,document.formulario.var4.value,document.formulario.var5.value)">
-
-      <div class="tittle">CÁLCULO DE ARANCELES</div>
-
-      <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0" id="borderedTable">
-        <tr><td><div id="contenidoTabla_ca">
-          <TABLE border="0" align="center">
-            <tr><th colspan="5"><h3>&nbsp;&nbsp;Ingrese Parámetros de Cálculo&nbsp;&nbsp;</h3></th></tr>
-
-            <TR>
-              <TD align="right">ID de Registro:&nbsp;&nbsp;</TD>
-              <TD align="left">
-                <input type="hidden" name="var1" value="0" size="4">
-                <input type="radio" name="radio" value="1" onClick="EstableceEstado(1)" checked>Registro Propiedad Raiz e Hipotecas<br>
-                <input type="radio" name="radio" value="2" onClick="EstableceEstado(2)">Registro Social de Inmuebles
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="right">Tipo de Proyecto:&nbsp;&nbsp;<input type="hidden" name="var2" value="0" size="4"></TD>
-              <TD align="left">
-                <SELECT NAME="p_TPROYECTO" SIZE="1" DISABLED onChange="TipoProyecto(document.formulario.p_TPROYECTO)">
-                  <option SELECTED value="0">Proyecto Normal</option>
-                  <option value="1">Proyecto Social</option>
-                </SELECT>
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="right">Servicio:&nbsp;&nbsp;</TD>
-              <TD align="left">
-                <input type="hidden" name="var3" value="0" size="4">
-                <select size="1" name="tservicio" id="tservicio" onChange="ComponerLista(document.formulario.tservicio,document.formulario.p_TRANSACCION)"></select>
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="right">Transaccion:&nbsp;&nbsp;</TD>
-              <TD align="left">
-                <input type="hidden" name="var4" value="0" size="4">
-                <select size="1" name="p_TRANSACCION" id="p_TRANSACCION" onClick="ModificarTexto(document.formulario.tservicio,document.formulario.p_TRANSACCION)"><option>Seleccione</option></select>
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="right">Monto:&nbsp;&nbsp;US$&nbsp;&nbsp;</TD>
-              <TD align="left">
-                <input type="text" name="var5" DISABLED value="0.00" size="10" onKeyPress="return consultar_bt(event,var1.value,var2.value,var3.value,var4.value,var5.value,'.0123456789')">
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="right"><h3>Pago:&nbsp;&nbsp;US$&nbsp;&nbsp;</h3></TD>
-              <TD align="left">
-                <div class="pago-row">
-                  <p ID="pago_arancel"><EM ID="emphasis2">.</EM></p>
-                  <input type="button" id="btn-agregar" value="＋ Agregar al historial" onclick="agregarAlHistorial()" title="Guardar este arancel en el historial">
-                </div>
-              </TD>
-            </TR>
-
-            <TR>
-              <TD align="center" colspan="2">
-                <P ID="paragraph1"><EM ID="emphasis1">.</EM></P>
-              </TD>
-            </TR>
-
-            <TR align="center">
-              <TD align="center" colspan="2">
-                <input type="button" DISABLED name="operar" value="Calcular" onClick="calcular(var1.value,var2.value,var3.value,var4.value,var5.value)">
-              </TD>
-            </TR>
-          </TABLE>
-          </div></td></tr>
-      </table>
-    </form>
-
-    <!-- ── Historial de aranceles ── -->
-    <div id="historial-section">
-      <h4>📋 Historial de Aranceles Calculados</h4>
-
-      <p id="historial-vacio">No hay aranceles en el historial aún.</p>
-      <ul id="lista-aranceles"></ul>
-
-      <div id="total-row">
-        <span id="total-label">Total acumulado:</span>
-        <span id="total-valor">US$ 0.00</span>
+      <div class="header">
+        <div class="header-icon">&#11035;</div>
+        <div class="header-text">
+          <h1>Registro QR</h1>
+          <p>Captura y seguimiento de presentaciones CNR</p>
+        </div>
       </div>
 
-      <input type="button" id="btn-limpiar-hist" value="✨ Limpiar historial" onclick="limpiarHistorial()">
+      <div class="card">
+        <div class="card-title">&#128203; Nueva entrada</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>N&#176; de Presentaci&#243;n</label>
+            <input type="text" id="txtPresentacion" placeholder="Ej: 202611009689" value="20261100"
+                   oninput="verificarDuplicado(this.value)">
+          </div>
+          <div class="field">
+            <label>Detalles</label>
+            <textarea id="txtDetalles" placeholder="Descripci&#243;n, notas adicionales&#8230;"></textarea>
+          </div>
+          <div class="field">
+            <label>Imagen con c&#243;digo QR <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+            <div class="drop-zone" id="dropZone">
+              <input type="file" id="fileInput" accept="image/*">
+              <span class="drop-icon">&#128444;&#65039;</span>
+              <div class="drop-label"><strong>Selecciona</strong> o arrastra la imagen aqu&#237;</div>
+            </div>
+            <div id="qr-badge"><span>&#9989;</span><span id="qr-text-badge"></span></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">&#10133; Agregar</button>
+            <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">&#11015;&#65039; Importar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="list-header">
+          <div class="card-title" style="margin-bottom:0">&#128196; Registros</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="list-count" id="list-count">0</span>
+            <button class="btn-sm sheets-btn" onclick="exportarASheets()">&#128202; Copiar para Sheets</button>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <input class="search-input" type="text" id="searchInput"
+                 placeholder="&#128269; Buscar por presentaci&#243;n, detalles, estado, matr&#237;cula&#8230;"
+                 oninput="buscar(this.value)">
+          <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar">&#x2715;</button>
+        </div>
+        <div class="search-count" id="searchCount"></div>
+        <div id="registro-list">
+          <div class="empty-state">
+            <span class="empty-icon">&#128235;</span>
+            No hay registros a&#250;n.<br>Completa el formulario y agrega el primero.
+          </div>
+        </div>
+      </div>
+
     </div>
+
+    <div id="storage-bar">
+      <span id="storage-size">&#128190; --</span>
+      <div class="bar-sep"></div>
+      <button class="storage-btn" onclick="exportarBackup()">&#11015; Backup</button>
+      <button class="storage-btn" onclick="document.getElementById('importBackupFile').click()">&#11014; Cargar</button>
+      <input type="file" id="importBackupFile" accept=".json" style="display:none" onchange="importarBackup(this)">
+      <div class="bar-sep"></div>
+      <button id="theme-toggle" onclick="toggleTema()" title="Cambiar tema">&#127769;</button>
+    </div>
+
+    <div id="toast"></div>
+    <canvas id="canvas"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+    <script>
+
+      /* ============================================================
+         VARIABLES GLOBALES
+         ============================================================ */
+      var STORAGE_KEY     = 'qr_registros_v1';
+      var THEME_KEY       = 'qr_tema_v1';
+      var CNR_CONSULTA    = 'https://www.e.cnr.gob.sv/ConsultaTramite3/consulta/consultaTramite.htm';
+      var registros       = [];
+      var qrTexto         = '';
+      var terminoBusqueda = '';
+
+      var fileInput   = document.getElementById('fileInput');
+      var dropZone    = document.getElementById('dropZone');
+      var qrBadge     = document.getElementById('qr-badge');
+      var qrTextBadge = document.getElementById('qr-text-badge');
+      var canvas      = document.getElementById('canvas');
+      var ctx         = canvas.getContext('2d');
+
+
+      /* ============================================================
+         DEFINICIÓN DE ESTADOS
+         ─────────────────────────────────────────────────────────────
+         Escala de avance del trámite (de claro a oscuro):
+           docinicio          #bbf7d0  verde muy claro  ← inicio
+           escaneoadm         #4ade80  verde medio
+           inscritaendespacho #15803d  verde oscuro     ← listo
+           inscritaretirada   #94a3b8  gris claro       ← concluido
+           observada          #ef4444  rojo             ← acción requerida
+           catastro           #a855f7  morado           ← proceso especial
+
+         El selector manual cicla por este mismo array.
+         ============================================================ */
+      var ESTADOS = [
+
+        /* ── Retirado — gris claro ─────────────────────────────────
+           DEBE ir antes que inscritaendespacho porque su texto
+           también contiene la palabra "inscrito".                    */
+        {
+          id:            'inscritaretirada',
+          label:         'Retirada',
+          palabrasClave: ['fue retirado', 'retirado por'],
+          barColor:      '#94a3b8',
+          badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)'
+        },
+
+        /* ── Inscrita en despacho — verde oscuro ─────────────────── */
+        {
+          id:            'inscritaendespacho',
+          label:         'En despacho',
+          palabrasClave: ['listo para su entrega', 'inscrito y listo'],
+          barColor:      '#15803d',
+          badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)'
+        },
+
+        /* ── Escaneo administrativo — verde medio ────────────────── */
+        {
+          id:            'escaneoadm',
+          label:         'Escaneo adm.',
+          palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'],
+          barColor:      '#4ade80',
+          badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)'
+        },
+
+        /* ── Documento ingresado — verde muy claro ───────────────── */
+        {
+          id:            'docinicio',
+          label:         'Ingresado',
+          palabrasClave: ['documento ingresado', 'proceso iniciado'],
+          barColor:      '#bbf7d0',
+          badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)'
+        },
+
+        /* ── Observada — rojo ──────────────────────────────────────  */
+        {
+          id:            'observada',
+          label:         'Observada',
+          palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'],
+          barColor:      '#ef4444',
+          badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)'
+        },
+
+        /* ── Catastro — morado ─────────────────────────────────────  */
+        {
+          id:            'catastro',
+          label:         'Catastro',
+          palabrasClave: ['catastro'],
+          barColor:      '#a855f7',
+          badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)'
+        }
+
+      ];
+
+
+      /* ============================================================
+         DETECCIÓN DE ESTADO
+         Prioridad: 1) estadoManual   2) datos CNR   3) null
+         ============================================================ */
+      function detectarEstado(r) {
+
+        // 1) Estado forzado manualmente
+        if (r.estadoManual) {
+          for (var i = 0; i < ESTADOS.length; i++) {
+            if (ESTADOS[i].id === r.estadoManual) return ESTADOS[i];
+          }
+        }
+
+        // 2) Detectar desde texto CNR
+        if (!r.cnr || !r.cnr.estado) return null;
+        var estadoTexto = r.cnr.estado.toLowerCase();
+        for (var i = 0; i < ESTADOS.length; i++) {
+          var def = ESTADOS[i];
+          for (var j = 0; j < def.palabrasClave.length; j++) {
+            if (estadoTexto.indexOf(def.palabrasClave[j]) >= 0) return def;
+          }
+        }
+        return null;
+      }
+
+
+      /* ============================================================
+         CAMBIO DE ESTADO MANUAL — sin redibujar toda la lista
+         ─────────────────────────────────────────────────────────────
+         delta: +1 avanza, -1 retrocede en el array ESTADOS.
+         null  limpia el estado manual (vuelve a detectar por CNR).
+         ============================================================ */
+      function cambiarEstadoManual(id, delta) {
+
+        // Buscar el registro
+        var r = null;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) { r = registros[i]; break; }
+        }
+        if (!r) return;
+
+        // Índice actual en ESTADOS (por estadoManual o por detección CNR)
+        var estadoActual = detectarEstado(r);
+        var idxActual    = -1;
+        if (estadoActual) {
+          for (var i = 0; i < ESTADOS.length; i++) {
+            if (ESTADOS[i].id === estadoActual.id) { idxActual = i; break; }
+          }
+        }
+
+        // Calcular nuevo índice con wrap circular
+        var total    = ESTADOS.length;
+        var idxNuevo = ((idxActual + delta) % total + total) % total;
+        r.estadoManual = ESTADOS[idxNuevo].id;
+
+        guardarEnStorage();
+
+        // Actualizar solo los elementos visuales de esta tarjeta
+        aplicarColorTarjeta(id, ESTADOS[idxNuevo]);
+        actualizarSlider(id, r);
+      }
+
+      function limpiarEstadoManual(id) {
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) {
+            delete registros[i].estadoManual;
+            guardarEnStorage();
+            var estadoAuto = detectarEstado(registros[i]);
+            aplicarColorTarjeta(id, estadoAuto);
+            actualizarSlider(id, registros[i]);
+            break;
+          }
+        }
+      }
+
+      /* Actualiza barra izquierda + badge sin redibujar la lista */
+      function aplicarColorTarjeta(id, estado) {
+        var bar   = document.querySelector('#item-' + id + ' .item-bar');
+        var badge = document.querySelector('#item-' + id + ' .item-num');
+        if (bar)   bar.style.borderLeftColor = estado ? estado.barColor      : 'transparent';
+        if (badge) badge.style.background    = estado ? estado.badgeGradient : 'linear-gradient(135deg, var(--accent), #6366f1)';
+      }
+
+      /* Actualiza el texto y color del display del slider */
+      function actualizarSlider(id, r) {
+        var display = document.getElementById('slider-display-' + id);
+        var nombre  = document.getElementById('slider-nombre-'  + id);
+        var origen  = document.getElementById('slider-origen-'  + id);
+        if (!display || !nombre || !origen) return;
+
+        var estado = detectarEstado(r);
+        if (estado) {
+          nombre.textContent  = estado.label;
+          nombre.style.color  = estado.barColor;
+          origen.textContent  = r.estadoManual ? 'manual' : 'cnr';
+        } else {
+          nombre.textContent  = 'Sin estado';
+          nombre.style.color  = 'var(--text-muted)';
+          origen.textContent  = '';
+        }
+      }
+
+
+      /* ============================================================
+         INIT
+         ============================================================ */
+      window.addEventListener('DOMContentLoaded', function() {
+        cargarTema();
+        cargarDesdeStorage();
+        renderList();
+      });
+
+
+      /* ============================================================
+         TEMA
+         ============================================================ */
+      function cargarTema() {
+        var tema = localStorage.getItem(THEME_KEY) || 'dark';
+        aplicarTema(tema);
+      }
+
+      function toggleTema() {
+        var actual = document.documentElement.getAttribute('data-theme');
+        var nuevo  = actual === 'dark' ? 'light' : 'dark';
+        aplicarTema(nuevo);
+        localStorage.setItem(THEME_KEY, nuevo);
+      }
+
+      function aplicarTema(tema) {
+        document.documentElement.setAttribute('data-theme', tema);
+        var btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = tema === 'dark' ? '\u{1F319}' : '\u2600\uFE0F';
+      }
+
+
+      /* ============================================================
+         DRAG & DROP / ESCANER QR
+         ============================================================ */
+      dropZone.addEventListener('dragover',  function(e) { e.preventDefault(); dropZone.classList.add('over'); });
+      dropZone.addEventListener('dragleave', function()  { dropZone.classList.remove('over'); });
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault(); dropZone.classList.remove('over');
+        var f = e.dataTransfer.files[0];
+        if (f && f.type.startsWith('image/')) escanearImagen(f);
+      });
+      fileInput.addEventListener('change', function() {
+        if (this.files[0]) escanearImagen(this.files[0]);
+      });
+
+      function escanearImagen(file) {
+        qrTexto = '';
+        qrBadge.classList.remove('show');
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            canvas.width  = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            var code = jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+            if (code) {
+              qrTexto = code.data;
+              qrTextBadge.textContent = qrTexto;
+              qrBadge.classList.add('show');
+              toast('QR detectado.');
+            } else {
+              toast('No se encontro QR en la imagen.');
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+
+      /* ============================================================
+         VALIDACIÓN DE DUPLICADO
+         ============================================================ */
+      function verificarDuplicado(valor) {
+        var campo  = document.getElementById('txtPresentacion');
+        var v      = valor.trim();
+        var existe = false;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].presentacion === v) { existe = true; break; }
+        }
+        campo.classList.toggle('input-duplicado', existe);
+      }
+
+
+      /* ============================================================
+         CRUD DE REGISTROS
+         ============================================================ */
+      function agregarRegistro() {
+        var presentacion = document.getElementById('txtPresentacion').value.trim();
+        var detalles     = document.getElementById('txtDetalles').value.trim();
+
+        if (!presentacion) { toast('Ingresa el N° de Presentación.'); return; }
+
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].presentacion === presentacion) {
+            toast('⚠️ El N° ' + presentacion + ' ya está en la lista.');
+            document.getElementById('txtPresentacion').classList.add('input-duplicado');
+            return;
+          }
+        }
+
+        registros.push({
+          id:           Date.now(),
+          presentacion: presentacion,
+          detalles:     detalles,
+          qr:           qrTexto || '',
+          cnr:          null,
+          fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+        });
+        guardarEnStorage();
+        renderList();
+        limpiarFormulario();
+        toast('Registro agregado.');
+      }
+
+      function eliminarRegistro(id) {
+        registros = registros.filter(function(r) { return r.id !== id; });
+        guardarEnStorage();
+        renderList();
+        toast('Registro eliminado.');
+      }
+
+      function abrirCNR(presentacion, qrUrl) {
+        var url = qrUrl || CNR_CONSULTA;
+        window.open(url, '_blank', 'noopener,noreferrer');
+        if (!qrUrl) {
+          navigator.clipboard.writeText(presentacion).catch(function() {});
+          toast('CNR abierto y N° copiado al portapapeles');
+        }
+      }
+
+      function toggleItem(id) {
+        var body = document.getElementById('body-' + id);
+        if (!body) return;
+        body.classList.toggle('collapsed');
+      }
+
+      function editarDetalles(id) {
+        var wrap = document.getElementById('edit-wrap-' + id);
+        if (!wrap) return;
+        var r = null;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) { r = registros[i]; break; }
+        }
+        if (!r) return;
+        document.getElementById('edit-pres-'  + id).value = r.presentacion || '';
+        document.getElementById('edit-input-' + id).value = r.detalles     || '';
+        wrap.classList.toggle('visible');
+        if (wrap.classList.contains('visible')) document.getElementById('edit-pres-' + id).focus();
+      }
+
+      function guardarDetalles(id) {
+        var elPres = document.getElementById('edit-pres-'  + id);
+        var elDet  = document.getElementById('edit-input-' + id);
+        if (!elPres || !elDet) return;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) {
+            var pres = elPres.value.trim();
+            if (pres) registros[i].presentacion = pres;
+            registros[i].detalles = elDet.value.trim();
+            break;
+          }
+        }
+        guardarEnStorage();
+        renderList();
+        toast('Registro actualizado.');
+      }
+
+      function pegarDesdeCNR(id) {
+        var cnrEl = document.getElementById('cnr-block-' + id);
+        if (cnrEl) {
+          cnrEl.innerHTML = '<div class="cnr-empty"><span class="paste-spin"></span> Leyendo portapapeles...</div>';
+        }
+        navigator.clipboard.readText().then(function(texto) {
+          if (!texto || texto.trim().length < 20) {
+            toast('El portapapeles esta vacio o sin datos CNR.');
+            renderList();
+            return;
+          }
+          var datos = parsearTextoCNR(texto);
+          for (var i = 0; i < registros.length; i++) {
+            if (registros[i].id === id) { registros[i].cnr = datos; break; }
+          }
+          guardarEnStorage();
+          renderList();
+          toast('Datos pegados correctamente.');
+        }).catch(function(e) {
+          toast('Sin acceso al portapapeles: ' + e.message);
+          renderList();
+        });
+      }
+
+
+      /* ============================================================
+         PARSEO CNR
+         ============================================================ */
+      function parsearTextoCNR(texto) {
+        function extraer(label) {
+          var esc2 = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          var m    = texto.match(new RegExp(esc2 + '[:\\t\\s]*([^\\n\\r]+)', 'i'));
+          return m ? m[1].trim() : '';
+        }
+        function extraerEstado() {
+          var m = texto.match(/estado jur[íi]dico y ubicaci[óo]n del documento[:\t\s]*([^\n\r]+(?:[\n\r]+(?!fecha del estado)[^\n\r]+)*)/i);
+          return m ? m[1].replace(/\s+/g, ' ').trim() : '';
+        }
+        return {
+          matricula:    extraer('N\u00famero de matr\u00edcula'),
+          presentacion: extraer('N\u00famero de presentaci\u00f3n'),
+          fechaPres:    extraer('Fecha de presentaci\u00f3n'),
+          direccion:    extraer('Direcci\u00f3n'),
+          ubicacion:    extraer('Ubicaci\u00f3n'),
+          acto:         extraer('Acto'),
+          estado:       extraerEstado(),
+          fechaEstado:  extraer('Fecha del estado y fecha del \u00faltimo movimiento'),
+          fechaSync:    new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+        };
+      }
+
+
+      /* ============================================================
+         RENDER — BLOQUE CNR
+         ============================================================ */
+      function renderCNRBlock(r) {
+        var bloque = document.createElement('div');
+        bloque.className = 'cnr-block';
+        bloque.id = 'cnr-block-' + r.id;
+
+        if (!r.cnr) {
+          var vacio = document.createElement('div');
+          vacio.className = 'cnr-empty';
+          vacio.textContent = 'Sin datos — copia el texto de la página CNR y presiona Pegar datos';
+          bloque.appendChild(vacio);
+          return bloque;
+        }
+
+        function agregarFila(contenedor, etiqueta, valor) {
+          if (!valor) return;
+          var fila = document.createElement('div');
+          fila.className = 'cnr-row';
+          var lbl = document.createElement('span');
+          lbl.className = 'cnr-label';
+          lbl.textContent = etiqueta;
+          var val = document.createElement('span');
+          val.className = 'cnr-value';
+          val.textContent = valor;
+          fila.appendChild(lbl);
+          fila.appendChild(val);
+          contenedor.appendChild(fila);
+        }
+
+        var tituloGeneral = document.createElement('div');
+        tituloGeneral.className = 'cnr-section-title';
+        tituloGeneral.textContent = 'Datos generales';
+        bloque.appendChild(tituloGeneral);
+
+        var filasGenerales = document.createElement('div');
+        filasGenerales.className = 'cnr-rows';
+        bloque.appendChild(filasGenerales);
+
+        agregarFila(filasGenerales, 'Matrícula',    r.cnr.matricula);
+        agregarFila(filasGenerales, 'Presentación', r.cnr.presentacion);
+        agregarFila(filasGenerales, 'Fecha pres.',  r.cnr.fechaPres);
+        agregarFila(filasGenerales, 'Dirección',    r.cnr.direccion);
+        agregarFila(filasGenerales, 'Ubicación',    r.cnr.ubicacion);
+        agregarFila(filasGenerales, 'Acto',         r.cnr.acto);
+
+        var tituloEstado = document.createElement('div');
+        tituloEstado.className = 'cnr-section-title';
+        tituloEstado.style.borderTop = '1px solid var(--border)';
+        tituloEstado.textContent = 'Estado jurídico';
+        bloque.appendChild(tituloEstado);
+
+        var filasEstado = document.createElement('div');
+        filasEstado.className = 'cnr-rows';
+        bloque.appendChild(filasEstado);
+
+        if (r.cnr.estado) {
+          var filaEstado = document.createElement('div');
+          filaEstado.className = 'cnr-row';
+          var lblEstado = document.createElement('span');
+          lblEstado.className = 'cnr-label';
+          lblEstado.textContent = 'Estado';
+          var valEstado = document.createElement('span');
+          valEstado.className = 'cnr-value estado-valor';
+          valEstado.textContent = r.cnr.estado;
+          filaEstado.appendChild(lblEstado);
+          filaEstado.appendChild(valEstado);
+          filasEstado.appendChild(filaEstado);
+        }
+
+        agregarFila(filasEstado, 'Fecha estado', r.cnr.fechaEstado);
+        agregarFila(filasEstado, 'Actualizado',  r.cnr.fechaSync);
+
+        return bloque;
+      }
+
+
+      /* ============================================================
+         RENDER — SELECTOR DE ESTADO DESLIZABLE
+         ─────────────────────────────────────────────────────────────
+         ◀  [  Nombre del estado  · origen  ]  ▶  ✕
+         ✕ solo aparece cuando hay estado manual (para resetearlo)
+         ============================================================ */
+      function renderEstadoSlider(r) {
+        var estado = detectarEstado(r);
+
+        var wrapper = document.createElement('div');
+        wrapper.className = 'estado-slider';
+
+        // Botón izquierda
+        var btnIzq = document.createElement('button');
+        btnIzq.className = 'estado-slider-btn';
+        btnIzq.innerHTML = '&#9664;';
+        btnIzq.title = 'Estado anterior';
+        (function(id) {
+          btnIzq.onclick = function() { cambiarEstadoManual(id, -1); };
+        })(r.id);
+        wrapper.appendChild(btnIzq);
+
+        // Display central
+        var display = document.createElement('div');
+        display.className = 'estado-slider-display';
+        display.id = 'slider-display-' + r.id;
+
+        var nombre = document.createElement('span');
+        nombre.className = 'estado-slider-nombre';
+        nombre.id = 'slider-nombre-' + r.id;
+        nombre.textContent = estado ? estado.label : 'Sin estado';
+        nombre.style.color  = estado ? estado.barColor : 'var(--text-muted)';
+
+        var origen = document.createElement('span');
+        origen.className = 'estado-slider-origen';
+        origen.id = 'slider-origen-' + r.id;
+        origen.textContent = r.estadoManual ? 'manual' : (estado ? 'cnr' : '');
+
+        display.appendChild(nombre);
+        display.appendChild(origen);
+        wrapper.appendChild(display);
+
+        // Botón derecha
+        var btnDer = document.createElement('button');
+        btnDer.className = 'estado-slider-btn';
+        btnDer.innerHTML = '&#9654;';
+        btnDer.title = 'Estado siguiente';
+        (function(id) {
+          btnDer.onclick = function() { cambiarEstadoManual(id, +1); };
+        })(r.id);
+        wrapper.appendChild(btnDer);
+
+        // Botón reset (quitar estado manual)
+        var btnReset = document.createElement('button');
+        btnReset.className = 'estado-slider-reset';
+        btnReset.innerHTML = '&#8635;';
+        btnReset.title = 'Quitar estado manual (volver a CNR)';
+        (function(id) {
+          btnReset.onclick = function() { limpiarEstadoManual(id); };
+        })(r.id);
+        wrapper.appendChild(btnReset);
+
+        return wrapper;
+      }
+
+
+      /* ============================================================
+         RENDER — LISTA COMPLETA
+         ============================================================ */
+      function renderList() {
+        var list  = document.getElementById('registro-list');
+        var count = document.getElementById('list-count');
+        count.textContent = registros.length;
+
+        if (registros.length === 0) {
+          list.innerHTML = '';
+          var empty = document.createElement('div');
+          empty.className = 'empty-state';
+          empty.innerHTML = '<span class="empty-icon">&#128235;</span>No hay registros aún.<br>Completa el formulario y agrega el primero.';
+          list.appendChild(empty);
+          return;
+        }
+
+        list.innerHTML = '';
+
+        for (var i = 0; i < registros.length; i++) {
+          var r      = registros[i];
+          var num    = String(registros.length - i).padStart(2, '0');
+          var estado = detectarEstado(r);
+
+          /* ── Tarjeta ── */
+          var item = document.createElement('div');
+          item.className = 'item';
+          item.id = 'item-' + r.id;
+
+          /* ── Barra superior ── */
+          var bar = document.createElement('div');
+          bar.className = 'item-bar';
+          if (estado) bar.style.borderLeftColor = estado.barColor;
+
+          var numBadge = document.createElement('div');
+          numBadge.className = 'item-num';
+          numBadge.title = 'Expandir / Contraer';
+          numBadge.textContent = '#' + num;
+          if (estado) numBadge.style.background = estado.badgeGradient;
+          (function(id) { numBadge.onclick = function() { toggleItem(id); }; })(r.id);
+          bar.appendChild(numBadge);
+
+          var presBar = document.createElement('div');
+          presBar.className = 'item-presentacion-bar';
+          presBar.textContent = r.presentacion;
+          bar.appendChild(presBar);
+
+          var btnLink = document.createElement('button');
+          btnLink.className = 'btn-sm link-btn';
+          if (r.qr) {
+            btnLink.title = 'Abrir link QR';
+            btnLink.innerHTML = '&#128279; Ver';
+            (function(pres, qr) { btnLink.onclick = function() { abrirCNR(pres, qr); }; })(r.presentacion, r.qr);
+          } else {
+            btnLink.title = 'Consultar en CNR';
+            btnLink.innerHTML = '&#128203;&#127760;';
+            (function(pres) { btnLink.onclick = function() { abrirCNR(pres, ''); }; })(r.presentacion);
+          }
+          bar.appendChild(btnLink);
+
+          var btnEliminar = document.createElement('button');
+          btnEliminar.className = 'btn-sm danger';
+          btnEliminar.title = 'Eliminar';
+          btnEliminar.innerHTML = '&#x2715;';
+          (function(id) { btnEliminar.onclick = function() { eliminarRegistro(id); }; })(r.id);
+          bar.appendChild(btnEliminar);
+
+          item.appendChild(bar);
+
+          /* ── Cuerpo colapsado ── */
+          var body = document.createElement('div');
+          body.className = 'item-body collapsed';
+          body.id = 'body-' + r.id;
+
+          // Detalles
+          if (r.detalles) {
+            var detDiv = document.createElement('div');
+            detDiv.className = 'item-detalles';
+            detDiv.textContent = r.detalles;
+            body.appendChild(detDiv);
+          }
+
+          // ── Selector de estado deslizable ──
+          body.appendChild(renderEstadoSlider(r));
+
+          // Panel de edición
+          var editWrap = document.createElement('div');
+          editWrap.className = 'edit-wrap';
+          editWrap.id = 'edit-wrap-' + r.id;
+
+          var lblPres = document.createElement('div');
+          lblPres.className = 'edit-lbl edit-field-gap';
+          lblPres.textContent = 'N° Presentación';
+          editWrap.appendChild(lblPres);
+
+          var inputPres = document.createElement('input');
+          inputPres.type = 'text';
+          inputPres.id = 'edit-pres-' + r.id;
+          inputPres.placeholder = 'Número de presentación';
+          inputPres.style.cssText = 'background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:8px 11px;color:var(--text);font-family:JetBrains Mono,monospace;font-size:0.85rem;outline:none;width:100%;margin-bottom:10px;';
+          editWrap.appendChild(inputPres);
+
+          var lblDet = document.createElement('div');
+          lblDet.className = 'edit-lbl';
+          lblDet.textContent = 'Detalles';
+          editWrap.appendChild(lblDet);
+
+          var textareaDet = document.createElement('textarea');
+          textareaDet.id = 'edit-input-' + r.id;
+          textareaDet.placeholder = 'Escribe los detalles...';
+          textareaDet.style.cssText = 'background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:8px 11px;color:var(--text);font-family:Outfit,sans-serif;font-size:0.85rem;outline:none;width:100%;min-height:58px;resize:vertical;margin-top:4px;box-shadow:0 0 0 2px var(--accent-glow);';
+          editWrap.appendChild(textareaDet);
+
+          var editActions = document.createElement('div');
+          editActions.className = 'edit-actions';
+
+          var btnGuardar = document.createElement('button');
+          btnGuardar.className = 'btn-sm save-btn';
+          btnGuardar.innerHTML = '&#10003; Guardar';
+          (function(id) { btnGuardar.onclick = function() { guardarDetalles(id); }; })(r.id);
+          editActions.appendChild(btnGuardar);
+
+          var btnCancelar = document.createElement('button');
+          btnCancelar.className = 'btn-sm';
+          btnCancelar.textContent = 'Cancelar';
+          (function(id) { btnCancelar.onclick = function() { editarDetalles(id); }; })(r.id);
+          editActions.appendChild(btnCancelar);
+
+          editWrap.appendChild(editActions);
+          body.appendChild(editWrap);
+
+          // Bloque CNR
+          body.appendChild(renderCNRBlock(r));
+
+          // Fila inferior
+          var bottomRow = document.createElement('div');
+          bottomRow.className = 'item-bottom-row';
+
+          var btnPegar = document.createElement('button');
+          btnPegar.className = 'btn-sm paste-btn';
+          btnPegar.innerHTML = '&#128203; Pegar datos CNR';
+          (function(id) { btnPegar.onclick = function() { pegarDesdeCNR(id); }; })(r.id);
+          bottomRow.appendChild(btnPegar);
+
+          var btnEditar = document.createElement('button');
+          btnEditar.className = 'btn-sm edit-btn';
+          btnEditar.innerHTML = '&#9998; Editar';
+          (function(id) { btnEditar.onclick = function() { editarDetalles(id); }; })(r.id);
+          bottomRow.appendChild(btnEditar);
+
+          var timestamp = document.createElement('span');
+          timestamp.className = 'item-timestamp';
+          timestamp.innerHTML = '&#128336; ' + r.fecha;
+          bottomRow.appendChild(timestamp);
+
+          body.appendChild(bottomRow);
+          item.appendChild(body);
+          list.appendChild(item);
+        }
+
+        if (terminoBusqueda) aplicarFiltro();
+      }
+
+
+      /* ============================================================
+         BÚSQUEDA Y FILTRO
+         ============================================================ */
+      function buscar(termino) {
+        terminoBusqueda = termino.trim().toLowerCase();
+        document.getElementById('searchClear').classList.toggle('visible', terminoBusqueda.length > 0);
+        aplicarFiltro();
+      }
+
+      function limpiarBusqueda() {
+        terminoBusqueda = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClear').classList.remove('visible');
+        for (var i = 0; i < registros.length; i++) {
+          var body = document.getElementById('body-' + registros[i].id);
+          if (body) body.classList.add('collapsed');
+        }
+        aplicarFiltro();
+      }
+
+      function aplicarFiltro() {
+        var items    = document.querySelectorAll('#registro-list .item');
+        var countEl  = document.getElementById('searchCount');
+        var visibles = 0;
+        items.forEach(function(item) {
+          if (!terminoBusqueda) { item.classList.remove('hidden'); visibles++; return; }
+          var id = item.id.replace('item-', '');
+          var r  = null;
+          for (var i = 0; i < registros.length; i++) {
+            if (String(registros[i].id) === id) { r = registros[i]; break; }
+          }
+          if (!r) { item.classList.add('hidden'); return; }
+          var haystack = [
+            r.presentacion || '', r.detalles || '', r.fecha || '',
+            r.estadoManual || '',
+            r.cnr ? (r.cnr.matricula    || '') : '',
+            r.cnr ? (r.cnr.acto         || '') : '',
+            r.cnr ? (r.cnr.direccion    || '') : '',
+            r.cnr ? (r.cnr.ubicacion    || '') : '',
+            r.cnr ? (r.cnr.estado       || '') : '',
+            r.cnr ? (r.cnr.presentacion || '') : ''
+          ].join(' ').toLowerCase();
+          if (haystack.indexOf(terminoBusqueda) >= 0) {
+            item.classList.remove('hidden');
+            var body = document.getElementById('body-' + r.id);
+            if (body) body.classList.remove('collapsed');
+            visibles++;
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+        if (countEl) {
+          countEl.textContent = terminoBusqueda
+            ? (visibles + ' resultado' + (visibles !== 1 ? 's' : '') + ' encontrado' + (visibles !== 1 ? 's' : ''))
+            : '';
+        }
+      }
+
+
+      /* ============================================================
+         IMPORTAR / EXPORTAR SHEETS
+         ============================================================ */
+      function importarDeSheets() {
+        navigator.clipboard.readText().then(function(texto) {
+          if (!texto || texto.trim().length === 0) { toast('El portapapeles esta vacio.'); return; }
+          var lineas   = texto.trim().split(/\r?\n/);
+          var nuevos   = 0;
+          var omitidos = 0;
+          for (var i = 0; i < lineas.length; i++) {
+            var linea = lineas[i].trim();
+            if (!linea) continue;
+            var partes       = linea.split('\t');
+            var presentacion = (partes[0] || '').trim();
+            var detalles     = (partes[1] || '').trim();
+            if (!presentacion) continue;
+            var existe = false;
+            for (var j = 0; j < registros.length; j++) {
+              if (registros[j].presentacion === presentacion) { existe = true; break; }
+            }
+            if (existe) { omitidos++; continue; }
+            registros.push({
+              id:           Date.now() + i,
+              presentacion: presentacion,
+              detalles:     detalles,
+              qr:           '',
+              cnr:          null,
+              fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+            });
+            nuevos++;
+          }
+          if (nuevos === 0 && omitidos === 0) { toast('Sin datos validos en el portapapeles.'); return; }
+          guardarEnStorage();
+          renderList();
+          var msg = nuevos + ' importado' + (nuevos !== 1 ? 's' : '');
+          if (omitidos > 0) msg += ' \u00b7 ' + omitidos + ' ya exist\u00eda' + (omitidos !== 1 ? 'n' : '');
+          toast(msg);
+        }).catch(function(e) { toast('Sin acceso al portapapeles: ' + e.message); });
+      }
+
+      function exportarASheets() {
+        if (registros.length === 0) { toast('No hay registros para copiar.'); return; }
+        var filas = [];
+        for (var i = 0; i < registros.length; i++) {
+          var r = registros[i];
+          filas.push(
+            (r.presentacion || '').replace(/\t/g, ' ').replace(/\n/g, ' ') + '\t' +
+            (r.detalles     || '').replace(/\t/g, ' ').replace(/\n/g, ' ')
+          );
+        }
+        navigator.clipboard.writeText(filas.join('\n')).then(function() {
+          toast(registros.length + ' filas copiadas. Pega con Ctrl+V en tu hoja.');
+        }).catch(function() { toast('No se pudo copiar al portapapeles.'); });
+      }
+
+
+      /* ============================================================
+         STORAGE
+         ============================================================ */
+      function actualizarStorageBar() {
+        try {
+          var raw   = localStorage.getItem(STORAGE_KEY) || '';
+          var bytes = raw.length * 2;
+          var kb    = (bytes / 1024).toFixed(1);
+          var el    = document.getElementById('storage-size');
+          if (!el) return;
+          el.innerHTML = '&#128190; ' + kb + ' KB';
+          el.className = bytes > 3145728 ? 'danger' : (bytes > 1572864 ? 'warn' : '');
+        } catch(e) {}
+      }
+
+      function exportarBackup() {
+        try {
+          var raw  = localStorage.getItem(STORAGE_KEY) || '[]';
+          var blob = new Blob([raw], { type: 'application/json' });
+          var url  = URL.createObjectURL(blob);
+          var a    = document.createElement('a');
+          var d    = new Date();
+          a.href     = url;
+          a.download = 'qr-registro-backup-' + d.getFullYear() + '-' +
+                       String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                       String(d.getDate()).padStart(2, '0') + '.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          toast('Backup descargado.');
+        } catch(e) { toast('Error al exportar: ' + e.message); }
+      }
+
+      function importarBackup(input) {
+        var file = input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            var datos = JSON.parse(e.target.result);
+            if (!Array.isArray(datos)) throw new Error('Formato invalido');
+            var nuevos = 0;
+            for (var i = 0; i < datos.length; i++) {
+              var existe = false;
+              for (var j = 0; j < registros.length; j++) {
+                if (registros[j].id === datos[i].id) { existe = true; break; }
+              }
+              if (!existe) { registros.push(datos[i]); nuevos++; }
+            }
+            guardarEnStorage();
+            renderList();
+            actualizarStorageBar();
+            toast(nuevos + ' registros importados del backup.');
+          } catch(err) { toast('Error al cargar backup: ' + err.message); }
+          input.value = '';
+        };
+        reader.readAsText(file);
+      }
+
+      function ordenarRegistros() {
+        registros.sort(function(a, b) {
+          var na = parseFloat(a.presentacion) || 0;
+          var nb = parseFloat(b.presentacion) || 0;
+          if (na !== nb) return nb - na;
+          return b.presentacion.localeCompare(a.presentacion);
+        });
+      }
+
+      function guardarEnStorage() {
+        ordenarRegistros();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
+        actualizarStorageBar();
+      }
+
+      function cargarDesdeStorage() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          registros = raw ? JSON.parse(raw) : [];
+          ordenarRegistros();
+        } catch(e) { registros = []; }
+        actualizarStorageBar();
+      }
+
+
+      /* ============================================================
+         UTILIDADES
+         ============================================================ */
+      function limpiarFormulario() {
+        var campo = document.getElementById('txtPresentacion');
+        campo.value = '20261100';
+        campo.classList.remove('input-duplicado');
+        document.getElementById('txtDetalles').value = '';
+        fileInput.value = '';
+        qrTexto = '';
+        qrBadge.classList.remove('show');
+      }
+
+      var toastTimer;
+      function toast(msg) {
+        var el = document.getElementById('toast');
+        el.innerHTML = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { el.classList.remove('show'); }, 2800);
+      }
+
+      function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+    </script>
+
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js");
+      }
+    </script>
 
   </body>
 </html>
