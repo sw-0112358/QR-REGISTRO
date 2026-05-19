@@ -392,6 +392,15 @@
           barColor:      '#bbf7d0',
           badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)'
         },
+               
+        /* ── En calificación — ámbar ── */
+        {
+          id:            'calificacion',
+          label:         'En calificación',
+          palabrasClave: ['calificaci'],
+          barColor:      '#f59e0b',
+          badgeGradient: 'linear-gradient(135deg, #d97706, #f59e0b)'
+        },
 
         /* ── Escaneo administrativo — verde medio ── */
         {
@@ -779,6 +788,13 @@
             var pres = elPres.value.trim();
             if (pres) registros[i].presentacion = pres;
             registros[i].detalles = elDet.value.trim();
+            // Si hay un QR escaneado en la bandeja, lo anexa al registro y limpia
+            if (qrTexto) {
+              registros[i].qr = qrTexto;
+              qrTexto = '';
+              qrBadge.classList.remove('show');
+              fileInput.value = '';
+            }
             break;
           }
         }
