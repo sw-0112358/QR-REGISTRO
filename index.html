@@ -291,7 +291,7 @@
         <div class="form-grid">
           <div class="field">
             <label>N&#176; de Presentaci&#243;n</label>
-            <input type="text" id="txtPresentacion" placeholder="Ej: 202611009689" value="20261100"
+            <input type="text" id="txtPresentacion" value="20261100"
                    oninput="verificarDuplicado(this.value)">
           </div>
           <div class="field">
@@ -308,8 +308,8 @@
             <div id="qr-badge"><span>&#9989;</span><span id="qr-text-badge"></span></div>
           </div>
           <div class="btn-row">
-            <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">&#10133; Agregar</button>
-            <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">&#11015;&#65039; Importar</button>
+            <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">➕Agregar</button>  
+            <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">📃📊Importar</button>        
           </div>
         </div>
       </div>
@@ -431,7 +431,7 @@
           label:         'Observada',
           palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'],
           barColor:      '#ef4444',
-          badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)'
+          badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)'      
         },
 
         /* ── Catastro — morado ─────────────────────────────────────  */
@@ -441,6 +441,15 @@
           palabrasClave: ['catastro'],
           barColor:      '#a855f7',
           badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)'
+        },
+
+        /* ── Asesoría — azul con rojo claro ── */
+        {
+          id:            'asesoria',
+          label:         'Asesoría',
+          palabrasClave: ['asesoria'],
+          barColor:      '#60a5fa', 
+          badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' 
         }
 
       ];
@@ -1133,7 +1142,7 @@
         if (countEl) {
           countEl.textContent = terminoBusqueda
             ? (visibles + ' resultado' + (visibles !== 1 ? 's' : '') + ' encontrado' + (visibles !== 1 ? 's' : ''))
-            : '';
+          : '';
         }
       }
 
@@ -1143,38 +1152,61 @@
          ============================================================ */
       function importarDeSheets() {
         navigator.clipboard.readText().then(function(texto) {
-          if (!texto || texto.trim().length === 0) { toast('El portapapeles esta vacio.'); return; }
-          var lineas   = texto.trim().split(/\r?\n/);
-          var nuevos   = 0;
-          var omitidos = 0;
+          if (!texto || texto.trim().length === 0) { toast('El portapapeles está vacío.'); return; }
+
+          var lineas = texto.trim().split(/\r?\n/);
+          var lineasValidas = [];
+          var errores = [];
+
           for (var i = 0; i < lineas.length; i++) {
             var linea = lineas[i].trim();
             if (!linea) continue;
+
             var partes       = linea.split('\t');
             var presentacion = (partes[0] || '').trim();
             var detalles     = (partes[1] || '').trim();
-            if (!presentacion) continue;
+
+            // Validar: exactamente 12 dígitos numéricos
+            if (!/^\d{12}$/.test(presentacion)) {
+              errores.push('Línea ' + (i + 1) + ': "' + presentacion + '" no es un número de 12 dígitos');
+              continue;
+            }
+
+            lineasValidas.push({ presentacion: presentacion, detalles: detalles });
+          }
+
+          // Si hay errores, advertir y no importar nada
+          if (errores.length > 0) {
+            toast('⚠️ Datos inválidos — revisa el portapapeles. Ej: ' + errores[0]);
+            return;
+          }
+
+          if (lineasValidas.length === 0) { toast('Sin datos válidos en el portapapeles.'); return; }
+
+          var nuevos = 0, omitidos = 0;
+          for (var i = 0; i < lineasValidas.length; i++) {
             var existe = false;
             for (var j = 0; j < registros.length; j++) {
-              if (registros[j].presentacion === presentacion) { existe = true; break; }
+              if (registros[j].presentacion === lineasValidas[i].presentacion) { existe = true; break; }
             }
             if (existe) { omitidos++; continue; }
             registros.push({
               id:           Date.now() + i,
-              presentacion: presentacion,
-              detalles:     detalles,
+              presentacion: lineasValidas[i].presentacion,
+              detalles:     lineasValidas[i].detalles,
               qr:           '',
               cnr:          null,
               fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
             });
             nuevos++;
           }
-          if (nuevos === 0 && omitidos === 0) { toast('Sin datos validos en el portapapeles.'); return; }
+
           guardarEnStorage();
           renderList();
           var msg = nuevos + ' importado' + (nuevos !== 1 ? 's' : '');
-          if (omitidos > 0) msg += ' \u00b7 ' + omitidos + ' ya exist\u00eda' + (omitidos !== 1 ? 'n' : '');
+          if (omitidos > 0) msg += ' · ' + omitidos + ' ya existía' + (omitidos !== 1 ? 'n' : '');
           toast(msg);
+
         }).catch(function(e) { toast('Sin acceso al portapapeles: ' + e.message); });
       }
 
@@ -1218,8 +1250,8 @@
           var d    = new Date();
           a.href     = url;
           a.download = 'qr-registro-backup-' + d.getFullYear() + '-' +
-                       String(d.getMonth() + 1).padStart(2, '0') + '-' +
-                       String(d.getDate()).padStart(2, '0') + '.json';
+            String(d.getMonth() + 1).padStart(2, '0') + '-' +
+            String(d.getDate()).padStart(2, '0') + '.json';
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
