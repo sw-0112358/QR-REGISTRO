@@ -130,6 +130,20 @@
       .btn-sm.danger           { border-color: rgba(239,68,68,0.4); color: var(--red); padding: 5px 9px; }
       .btn-sm.danger:hover     { background: rgba(239,68,68,0.1); }
 
+      /* ── Botón de ordenar ── */
+      .btn-sort {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 12px; font-size: 0.76rem; border-radius: 7px;
+        border: 1px solid rgba(59,130,246,0.4); background: transparent;
+        color: var(--accent); cursor: pointer; font-family: 'Outfit', sans-serif;
+        font-weight: 600; transition: all 0.18s; white-space: nowrap; letter-spacing: 0.3px;
+      }
+      .btn-sort:hover { background: var(--accent-glow); border-color: var(--accent); }
+      .btn-sort:active { transform: scale(0.96); }
+      .btn-sort.sorting { opacity: 0.6; pointer-events: none; }
+      .sort-icon { display: inline-block; transition: transform 0.4s ease; }
+      .btn-sort.sorting .sort-icon { transform: rotate(360deg); }
+
       @keyframes fade-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
       @keyframes spin     { to { transform: rotate(360deg); } }
 
@@ -155,70 +169,36 @@
 
       /* ── Selector de estado deslizable ── */
       .estado-slider {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        background: var(--surface3);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        overflow: hidden;
+        display: flex; align-items: center; gap: 0;
+        background: var(--surface3); border: 1px solid var(--border);
+        border-radius: 10px; overflow: hidden;
       }
       .estado-slider-btn {
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 1rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.15s, color 0.15s;
-        user-select: none;
+        flex-shrink: 0; width: 36px; height: 36px; background: none; border: none;
+        color: var(--text-muted); font-size: 1rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s, color 0.15s; user-select: none;
       }
       .estado-slider-btn:hover { background: var(--border); color: var(--text); }
       .estado-slider-btn:active { background: var(--border-lit); }
       .estado-slider-display {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 4px 6px;
-        min-height: 36px;
-        gap: 1px;
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; padding: 4px 6px; min-height: 36px; gap: 1px;
       }
       .estado-slider-nombre {
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.3px;
-        text-align: center;
-        line-height: 1.2;
-        transition: color 0.2s;
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3px;
+        text-align: center; line-height: 1.2; transition: color 0.2s;
       }
       .estado-slider-origen {
-        font-size: 0.6rem;
-        color: var(--text-muted);
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
+        font-size: 0.6rem; color: var(--text-muted);
+        letter-spacing: 0.5px; text-transform: uppercase;
       }
       .estado-slider-reset {
-        flex-shrink: 0;
-        width: 28px;
-        height: 36px;
-        background: none;
-        border: none;
-        border-left: 1px solid var(--border);
-        color: var(--text-muted);
-        font-size: 0.7rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        flex-shrink: 0; width: 28px; height: 36px; background: none;
+        border: none; border-left: 1px solid var(--border); color: var(--text-muted);
+        font-size: 0.7rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
         transition: background 0.15s, color 0.15s;
-        title: 'Quitar estado manual';
       }
       .estado-slider-reset:hover { background: rgba(239,68,68,0.1); color: var(--red); }
 
@@ -316,9 +296,14 @@
 
       <div class="card">
         <div class="list-header">
-          <div class="card-title" style="margin-bottom:0">&#128196; Registros</div>
-          <div style="display:flex;gap:8px;align-items:center;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <!-- Botón de ordenar reemplaza la etiqueta estática -->
+            <button class="btn-sort" id="btnOrdenar" onclick="ordenarYRenderizar()" title="Ordenar por bloques de estado">
+              <span class="sort-icon">⇅</span> Ordenar registros
+            </button>
             <span class="list-count" id="list-count">0</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
             <button class="btn-sm sheets-btn" onclick="exportarASheets()">&#128202; Copiar para Sheets</button>
           </div>
         </div>
@@ -375,48 +360,13 @@
       /* ============================================================
          DEFINICIÓN DE ESTADOS
          ─────────────────────────────────────────────────────────────
-         Escala de avance del trámite (de claro a oscuro):
-           docinicio          #bbf7d0  verde muy claro  ← inicio
-           escaneoadm         #4ade80  verde medio
-           inscritaendespacho #15803d  verde oscuro     ← listo
-           inscritaretirada   #94a3b8  gris claro       ← concluido
-           observada          #ef4444  rojo             ← acción requerida
-           catastro           #a855f7  morado           ← proceso especial
-
-         El selector manual cicla por este mismo array.
+         El ORDEN en este array define:
+           1) El orden de los bloques al ordenar la lista
+           2) El ciclo del selector manual (◀ ▶)
          ============================================================ */
       var ESTADOS = [
 
-        /* ── Retirado — gris claro ─────────────────────────────────
-           DEBE ir antes que inscritaendespacho porque su texto
-           también contiene la palabra "inscrito".                    */
-        {
-          id:            'inscritaretirada',
-          label:         'Retirada',
-          palabrasClave: ['fue retirado', 'retirado por'],
-          barColor:      '#94a3b8',
-          badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)'
-        },
-
-        /* ── Inscrita en despacho — verde oscuro ─────────────────── */
-        {
-          id:            'inscritaendespacho',
-          label:         'En despacho',
-          palabrasClave: ['listo para su entrega', 'inscrito y listo'],
-          barColor:      '#15803d',
-          badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)'
-        },
-
-        /* ── Escaneo administrativo — verde medio ────────────────── */
-        {
-          id:            'escaneoadm',
-          label:         'Escaneo adm.',
-          palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'],
-          barColor:      '#4ade80',
-          badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)'
-        },
-
-        /* ── Documento ingresado — verde muy claro ───────────────── */
+        /* ── Documento ingresado — verde muy claro ── */
         {
           id:            'docinicio',
           label:         'Ingresado',
@@ -425,16 +375,25 @@
           badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)'
         },
 
-        /* ── Observada — rojo ──────────────────────────────────────  */
+        /* ── Escaneo administrativo — verde medio ── */
         {
-          id:            'observada',
-          label:         'Observada',
-          palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'],
-          barColor:      '#ef4444',
-          badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)'      
+          id:            'escaneoadm',
+          label:         'Escaneo adm.',
+          palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'],
+          barColor:      '#4ade80',
+          badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)'
         },
 
-        /* ── Catastro — morado ─────────────────────────────────────  */
+        /* ── Asesoría — azul claro ── */
+        {
+          id:            'asesoria',
+          label:         'Asesoría',
+          palabrasClave: ['asesoria'],
+          barColor:      '#60a5fa',
+          badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)'
+        },
+
+        /* ── Catastro — morado ── */
         {
           id:            'catastro',
           label:         'Catastro',
@@ -443,16 +402,51 @@
           badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)'
         },
 
-        /* ── Asesoría — azul con rojo claro ── */
+        /* ── Observada — rojo ── */
         {
-          id:            'asesoria',
-          label:         'Asesoría',
-          palabrasClave: ['asesoria'],
-          barColor:      '#60a5fa', 
-          badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' 
+          id:            'observada',
+          label:         'Observada',
+          palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'],
+          barColor:      '#ef4444',
+          badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)'
+        },
+
+        /* ── Inscrita en despacho — verde oscuro ── */
+        {
+          id:            'inscritaendespacho',
+          label:         'En despacho',
+          palabrasClave: ['listo para su entrega', 'inscrito y listo'],
+          barColor:      '#15803d',
+          badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)'
+        },
+
+        /* ── Retirado — gris claro ── */
+        {
+          id:            'inscritaretirada',
+          label:         'Retirada',
+          palabrasClave: ['fue retirado', 'retirado por'],
+          barColor:      '#94a3b8',
+          badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)'
+        },
+
+        /* ── Sin Estado — neutro, sin color de borde ── */
+        {
+          id:            'sinestado',
+          label:         'Sin estado',
+          palabrasClave: [],          // nunca se detecta automáticamente
+          barColor:      'transparent',
+          badgeGradient: 'linear-gradient(135deg, var(--accent), #6366f1)'
         }
 
       ];
+
+      /* Índice de bloque para ordenar: docinicio=0 … sincategoria=7 */
+      var ORDEN_BLOQUE = {};
+      for (var _i = 0; _i < ESTADOS.length; _i++) {
+        ORDEN_BLOQUE[ESTADOS[_i].id] = _i;
+      }
+      /* Los que no tienen estado conocido van al bloque de sincategoria */
+      var BLOQUE_SIN_ESTADO = ESTADOS.length - 1;
 
 
       /* ============================================================
@@ -473,6 +467,7 @@
         var estadoTexto = r.cnr.estado.toLowerCase();
         for (var i = 0; i < ESTADOS.length; i++) {
           var def = ESTADOS[i];
+          if (def.palabrasClave.length === 0) continue; // sincategoria nunca se auto-detecta
           for (var j = 0; j < def.palabrasClave.length; j++) {
             if (estadoTexto.indexOf(def.palabrasClave[j]) >= 0) return def;
           }
@@ -482,21 +477,61 @@
 
 
       /* ============================================================
-         CAMBIO DE ESTADO MANUAL — sin redibujar toda la lista
+         BLOQUE DE ORDEN para un registro
+         ============================================================ */
+      function bloqueDeOrden(r) {
+        var estado = detectarEstado(r);
+        if (!estado) return BLOQUE_SIN_ESTADO;
+        var idx = ORDEN_BLOQUE[estado.id];
+        return (idx !== undefined) ? idx : BLOQUE_SIN_ESTADO;
+      }
+
+
+      /* ============================================================
+         ORDENAR Y RENDERIZAR — accionado por el botón
          ─────────────────────────────────────────────────────────────
-         delta: +1 avanza, -1 retrocede en el array ESTADOS.
-         null  limpia el estado manual (vuelve a detectar por CNR).
+         Ordena registros[] por:
+           1) Bloque de estado (según ESTADOS)
+           2) Número de presentación descendente dentro del bloque
+         ============================================================ */
+      function ordenarYRenderizar() {
+        var btn = document.getElementById('btnOrdenar');
+        if (btn) { btn.classList.add('sorting'); }
+
+        // Pequeño timeout para que la animación del ícono sea visible
+        setTimeout(function() {
+          registros.sort(function(a, b) {
+            var bA = bloqueDeOrden(a);
+            var bB = bloqueDeOrden(b);
+            if (bA !== bB) return bA - bB;
+            // Dentro del mismo bloque: descendente por número de presentación
+            var nA = parseFloat(a.presentacion) || 0;
+            var nB = parseFloat(b.presentacion) || 0;
+            if (nA !== nB) return nB - nA;
+            return b.presentacion.localeCompare(a.presentacion);
+          });
+
+          guardarEnStorage();
+          renderList();
+          toast('Lista ordenada por estado.');
+
+          if (btn) {
+            setTimeout(function() { btn.classList.remove('sorting'); }, 400);
+          }
+        }, 120);
+      }
+
+
+      /* ============================================================
+         CAMBIO DE ESTADO MANUAL — sin redibujar toda la lista
          ============================================================ */
       function cambiarEstadoManual(id, delta) {
-
-        // Buscar el registro
         var r = null;
         for (var i = 0; i < registros.length; i++) {
           if (registros[i].id === id) { r = registros[i]; break; }
         }
         if (!r) return;
 
-        // Índice actual en ESTADOS (por estadoManual o por detección CNR)
         var estadoActual = detectarEstado(r);
         var idxActual    = -1;
         if (estadoActual) {
@@ -505,14 +540,11 @@
           }
         }
 
-        // Calcular nuevo índice con wrap circular
         var total    = ESTADOS.length;
         var idxNuevo = ((idxActual + delta) % total + total) % total;
         r.estadoManual = ESTADOS[idxNuevo].id;
 
         guardarEnStorage();
-
-        // Actualizar solo los elementos visuales de esta tarjeta
         aplicarColorTarjeta(id, ESTADOS[idxNuevo]);
         actualizarSlider(id, r);
       }
@@ -530,7 +562,6 @@
         }
       }
 
-      /* Actualiza barra izquierda + badge sin redibujar la lista */
       function aplicarColorTarjeta(id, estado) {
         var bar   = document.querySelector('#item-' + id + ' .item-bar');
         var badge = document.querySelector('#item-' + id + ' .item-num');
@@ -538,17 +569,15 @@
         if (badge) badge.style.background    = estado ? estado.badgeGradient : 'linear-gradient(135deg, var(--accent), #6366f1)';
       }
 
-      /* Actualiza el texto y color del display del slider */
       function actualizarSlider(id, r) {
-        var display = document.getElementById('slider-display-' + id);
         var nombre  = document.getElementById('slider-nombre-'  + id);
         var origen  = document.getElementById('slider-origen-'  + id);
-        if (!display || !nombre || !origen) return;
+        if (!nombre || !origen) return;
 
         var estado = detectarEstado(r);
         if (estado) {
           nombre.textContent  = estado.label;
-          nombre.style.color  = estado.barColor;
+          nombre.style.color  = (estado.barColor === 'transparent') ? 'var(--text-muted)' : estado.barColor;
           origen.textContent  = r.estadoManual ? 'manual' : 'cnr';
         } else {
           nombre.textContent  = 'Sin estado';
@@ -662,12 +691,13 @@
         }
 
         registros.push({
-          id:           Date.now(),
-          presentacion: presentacion,
-          detalles:     detalles,
-          qr:           qrTexto || '',
-          cnr:          null,
-          fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+          id:            Date.now(),
+          presentacion:  presentacion,
+          detalles:      detalles,
+          qr:            qrTexto || '',
+          cnr:           null,
+          estadoManual:  'docinicio',   // ← los agregados manualmente nacen como Ingresado
+          fecha:         new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
         });
         guardarEnStorage();
         renderList();
@@ -860,9 +890,6 @@
 
       /* ============================================================
          RENDER — SELECTOR DE ESTADO DESLIZABLE
-         ─────────────────────────────────────────────────────────────
-         ◀  [  Nombre del estado  · origen  ]  ▶  ✕
-         ✕ solo aparece cuando hay estado manual (para resetearlo)
          ============================================================ */
       function renderEstadoSlider(r) {
         var estado = detectarEstado(r);
@@ -870,7 +897,6 @@
         var wrapper = document.createElement('div');
         wrapper.className = 'estado-slider';
 
-        // Botón izquierda
         var btnIzq = document.createElement('button');
         btnIzq.className = 'estado-slider-btn';
         btnIzq.innerHTML = '&#9664;';
@@ -880,7 +906,6 @@
         })(r.id);
         wrapper.appendChild(btnIzq);
 
-        // Display central
         var display = document.createElement('div');
         display.className = 'estado-slider-display';
         display.id = 'slider-display-' + r.id;
@@ -889,7 +914,9 @@
         nombre.className = 'estado-slider-nombre';
         nombre.id = 'slider-nombre-' + r.id;
         nombre.textContent = estado ? estado.label : 'Sin estado';
-        nombre.style.color  = estado ? estado.barColor : 'var(--text-muted)';
+        nombre.style.color = estado
+          ? ((estado.barColor === 'transparent') ? 'var(--text-muted)' : estado.barColor)
+        : 'var(--text-muted)';
 
         var origen = document.createElement('span');
         origen.className = 'estado-slider-origen';
@@ -900,7 +927,6 @@
         display.appendChild(origen);
         wrapper.appendChild(display);
 
-        // Botón derecha
         var btnDer = document.createElement('button');
         btnDer.className = 'estado-slider-btn';
         btnDer.innerHTML = '&#9654;';
@@ -910,7 +936,6 @@
         })(r.id);
         wrapper.appendChild(btnDer);
 
-        // Botón reset (quitar estado manual)
         var btnReset = document.createElement('button');
         btnReset.className = 'estado-slider-reset';
         btnReset.innerHTML = '&#8635;';
@@ -948,7 +973,6 @@
           var num    = String(registros.length - i).padStart(2, '0');
           var estado = detectarEstado(r);
 
-          /* ── Tarjeta ── */
           var item = document.createElement('div');
           item.className = 'item';
           item.id = 'item-' + r.id;
@@ -956,13 +980,17 @@
           /* ── Barra superior ── */
           var bar = document.createElement('div');
           bar.className = 'item-bar';
-          if (estado) bar.style.borderLeftColor = estado.barColor;
+          if (estado && estado.barColor !== 'transparent') {
+            bar.style.borderLeftColor = estado.barColor;
+          }
 
           var numBadge = document.createElement('div');
           numBadge.className = 'item-num';
           numBadge.title = 'Expandir / Contraer';
           numBadge.textContent = '#' + num;
-          if (estado) numBadge.style.background = estado.badgeGradient;
+          if (estado && estado.barColor !== 'transparent') {
+            numBadge.style.background = estado.badgeGradient;
+          }
           (function(id) { numBadge.onclick = function() { toggleItem(id); }; })(r.id);
           bar.appendChild(numBadge);
 
@@ -998,7 +1026,6 @@
           body.className = 'item-body collapsed';
           body.id = 'body-' + r.id;
 
-          // Detalles
           if (r.detalles) {
             var detDiv = document.createElement('div');
             detDiv.className = 'item-detalles';
@@ -1006,10 +1033,9 @@
             body.appendChild(detDiv);
           }
 
-          // ── Selector de estado deslizable ──
           body.appendChild(renderEstadoSlider(r));
 
-          // Panel de edición
+          /* Panel de edición */
           var editWrap = document.createElement('div');
           editWrap.className = 'edit-wrap';
           editWrap.id = 'edit-wrap-' + r.id;
@@ -1055,10 +1081,8 @@
           editWrap.appendChild(editActions);
           body.appendChild(editWrap);
 
-          // Bloque CNR
           body.appendChild(renderCNRBlock(r));
 
-          // Fila inferior
           var bottomRow = document.createElement('div');
           bottomRow.className = 'item-bottom-row';
 
@@ -1166,16 +1190,14 @@
             var presentacion = (partes[0] || '').trim();
             var detalles     = (partes[1] || '').trim();
 
-            // Validar: exactamente 12 dígitos numéricos
-            if (!/^\d{12}$/.test(presentacion)) {
-              errores.push('Línea ' + (i + 1) + ': "' + presentacion + '" no es un número de 12 dígitos');
+            if (!/^\d{12,14}$/.test(presentacion)) {
+              errores.push('El número debe tener entre 12 y 14 dígitos');
               continue;
             }
 
             lineasValidas.push({ presentacion: presentacion, detalles: detalles });
           }
 
-          // Si hay errores, advertir y no importar nada
           if (errores.length > 0) {
             toast('⚠️ Datos inválidos — revisa el portapapeles. Ej: ' + errores[0]);
             return;
@@ -1196,6 +1218,7 @@
               detalles:     lineasValidas[i].detalles,
               qr:           '',
               cnr:          null,
+              // Sin estadoManual → quedan sin categoría
               fecha:        new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
             });
             nuevos++;
@@ -1286,17 +1309,9 @@
         reader.readAsText(file);
       }
 
-      function ordenarRegistros() {
-        registros.sort(function(a, b) {
-          var na = parseFloat(a.presentacion) || 0;
-          var nb = parseFloat(b.presentacion) || 0;
-          if (na !== nb) return nb - na;
-          return b.presentacion.localeCompare(a.presentacion);
-        });
-      }
-
+      /* guardarEnStorage ya NO ordena automáticamente —
+         el orden se preserva tal como está en registros[] */
       function guardarEnStorage() {
-        ordenarRegistros();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
         actualizarStorageBar();
       }
@@ -1305,7 +1320,6 @@
         try {
           var raw = localStorage.getItem(STORAGE_KEY);
           registros = raw ? JSON.parse(raw) : [];
-          ordenarRegistros();
         } catch(e) { registros = []; }
         actualizarStorageBar();
       }
