@@ -457,17 +457,19 @@
          ============================================================ */
       var ESTADOS = [
 
-        { id: 'docinicio',         label: 'Ingresado',      palabrasClave: ['documento ingresado', 'proceso iniciado'], barColor: '#bbf7d0', badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)' },
-        { id: 'calificacion',      label: 'En calificación',palabrasClave: ['calificaci'],                              barColor: '#f59e0b', badgeGradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },
-        { id: 'escaneoadm',        label: 'Escaneo adm.',   palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'], barColor: '#4ade80', badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)' },
-        { id: 'asesoria',          label: 'Asesoría',       palabrasClave: ['asesoria'],                                barColor: '#60a5fa', badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' },
-        { id: 'catastro',          label: 'Catastro',       palabrasClave: ['catastro'],                                barColor: '#a855f7', badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)' },
-        { id: 'observada',         label: 'Observada',      palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'], barColor: '#ef4444', badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)' },
-        { id: 'inscritaendespacho',label: 'En despacho',    palabrasClave: ['listo para su entrega', 'inscrito y listo'],barColor: '#15803d', badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)' },
-        { id: 'inscritaretirada',  label: 'Retirada',       palabrasClave: ['fue retirado', 'retirado por'],            barColor: '#94a3b8', badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)' },
-        { id: 'sincategoria',      label: 'Sin categoría',  palabrasClave: [],                                          barColor: 'transparent', badgeGradient: 'linear-gradient(135deg, var(--accent), #6366f1)' }
+        { id: 'docinicio',         label: 'Ingresado',      palabrasClave: ['documento ingresado', 'proceso iniciado'],          barColor: '#D2F7FF', badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)' },      
+        { id: 'preevaluacion',     label: 'Pre evaluación', palabrasClave: ['pre evaluaci', 'preevaluaci', 'evaluacion previa'], barColor: '#69E2FF', badgeGradient: 'linear-gradient(135deg, #10b981, #6ee7b7)' },             
+        { id: 'calificacion',      label: 'En calificación',palabrasClave: ['calificaci'],                                       barColor: '#E6E6FA', badgeGradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },       
+        { id: 'escaneoadm',        label: 'Escaneo adm.',   palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'], barColor: '#c4b5fd', badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)' },                
+        { id: 'asesoria',          label: 'Asesoría',       palabrasClave: ['asesoria'],                                         barColor: '#60a5fa', badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' },     
+        { id: 'inscritaendespacho',label: 'En despacho',    palabrasClave: ['listo para su entrega', 'inscrito y listo'],        barColor: '#15803d', badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)' },       
+        { id: 'catastro',          label: 'Catastro',       palabrasClave: ['catastro'],                                         barColor: '#a855f7', badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)' },
+        { id: 'observada',         label: 'Observada',      palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'], barColor: '#ef4444', badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)' },      
+        { id: 'inscritaretirada',  label: 'Retirada',       palabrasClave: ['fue retirado', 'retirado por'],                     barColor: '#94a3b8', badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)' },
+        { id: 'sincategoria',      label: 'Sin categoría',  palabrasClave: [],                                                   barColor: 'transparent', badgeGradient: 'linear-gradient(135deg, var(--accent), #6366f1)' }
 
       ];
+
 
       var ORDEN_BLOQUE = {};
       for (var _i = 0; _i < ESTADOS.length; _i++) {
@@ -1021,10 +1023,26 @@
           numBadge.style.cursor = 'pointer';
           (function(id) { numBadge.onclick = function() { toggleItem(id); }; })(r.id);
           bar.appendChild(numBadge);
+
+
+
           var spacer = document.createElement('div');
           spacer.style.flex = '1';
           bar.appendChild(spacer);
+
+          var btnShare = document.createElement('button');
+          btnShare.className = 'btn-sm';
+          btnShare.style.cssText = 'border:none;background:transparent;font-size:1.05rem;padding:4px 6px;line-height:1;color:var(--text-muted);';
+          btnShare.title = 'Compartir imagen';
+          btnShare.innerHTML = '&#128247;';
+          (function(r) {
+            btnShare.onclick = function() { compartirComoImagen(r); };
+          })(r);
+          bar.appendChild(btnShare);
+
           var btnLink = document.createElement('button');
+
+
           btnLink.className = 'btn-sm link-btn';
           if (r.qr) {
             btnLink.title = 'Abrir link QR';
@@ -1379,6 +1397,287 @@
       function esc(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       }
+
+
+
+
+
+
+      /* ============================================================
+         COMPARTIR COMO IMAGEN — dibuja tarjeta en canvas
+         ============================================================ */
+      function compartirComoImagen(r) {
+        var isDark  = document.documentElement.getAttribute('data-theme') !== 'light';
+        var estado  = detectarEstado(r);
+
+        /* ── Colores según tema ── */
+        var C = {
+          bg:       isDark ? '#0e1117' : '#ffffff',
+          bg2:      isDark ? '#141824' : '#f8fafc',
+          bg3:      isDark ? '#0d1520' : '#eef2f7',
+          border:   isDark ? '#1f2737' : '#cbd5e1',
+          accent:   isDark ? '#3b82f6' : '#2563eb',
+          text:     isDark ? '#e2e8f0' : '#0f172a',
+          muted:    isDark ? '#64748b' : '#64748b',
+          dim:      isDark ? '#94a3b8' : '#475569',
+          green:    isDark ? '#22c55e' : '#16a34a',
+          red:      '#ef4444',
+          barColor: (estado && estado.barColor !== 'transparent') ? estado.barColor : 'transparent'
+        };
+
+        var W   = 700;
+        var PAD = 28;
+        var c   = document.createElement('canvas');
+        var cx  = c.getContext('2d');
+
+        /* ── Medir altura necesaria ── */
+        cx.font = '500 15px Outfit, sans-serif';
+        var detallesLineas = [];
+        if (r.detalles) {
+          var palabras = r.detalles.split(' ');
+          var linea = '';
+          for (var w = 0; w < palabras.length; w++) {
+            var prueba = linea + (linea ? ' ' : '') + palabras[w];
+            if (cx.measureText(prueba).width > W - PAD * 2 - 24) {
+              if (linea) detallesLineas.push(linea);
+              linea = palabras[w];
+            } else { linea = prueba; }
+          }
+          if (linea) detallesLineas.push(linea);
+        }
+
+        var cnrFilas = [];
+        if (r.cnr) {
+          if (r.cnr.matricula)   cnrFilas.push(['Matrícula',    r.cnr.matricula]);
+          if (r.cnr.presentacion)cnrFilas.push(['Presentación', r.cnr.presentacion]);
+          if (r.cnr.fechaPres)   cnrFilas.push(['Fecha pres.',  r.cnr.fechaPres]);
+          if (r.cnr.direccion)   cnrFilas.push(['Dirección',    r.cnr.direccion]);
+          if (r.cnr.ubicacion)   cnrFilas.push(['Ubicación',    r.cnr.ubicacion]);
+          if (r.cnr.acto)        cnrFilas.push(['Acto',         r.cnr.acto]);
+        }
+
+        /* ── Calcular altura total ── */
+        var ROW_H    = 26;
+        var H_BAR    = 60;
+        var H_DET    = r.detalles  ? (14 + detallesLineas.length * 22 + 16) : 0;
+        var H_SLIDER = 0;
+        var H_CNR    = 0;
+        if (r.cnr) {
+          H_CNR = 34 + cnrFilas.length * ROW_H + 18; /* datos generales */
+          if (r.cnr.estado || r.cnr.fechaEstado) {
+            H_CNR += 34;
+            if (r.cnr.estado)      H_CNR += ROW_H * Math.ceil(r.cnr.estado.length / 42);
+            if (r.cnr.fechaEstado) H_CNR += ROW_H;
+          }
+          H_CNR += 16;
+        }
+        var H_FOOTER = 16;
+        var H_TOTAL  = H_BAR + H_DET + H_SLIDER + H_CNR + H_FOOTER + PAD;
+
+        c.width  = W;
+        c.height = H_TOTAL;
+
+        /* ── Fondo general ── */
+        cx.fillStyle = C.bg2;
+        roundRect(cx, 0, 0, W, H_TOTAL, 16);
+        cx.fill();
+
+        /* ── Barra superior ── */
+        cx.fillStyle = C.bg;
+        roundRectTop(cx, 0, 0, W, H_BAR, 16);
+        cx.fill();
+        cx.strokeStyle = C.border;
+        cx.lineWidth   = 1;
+        cx.beginPath(); cx.moveTo(0, H_BAR); cx.lineTo(W, H_BAR); cx.stroke();
+
+        /* Franja de color estado (izquierda) */
+        if (C.barColor !== 'transparent') {
+          cx.fillStyle = C.barColor;
+          roundRectLeft(cx, 0, 0, 4, H_BAR, 16);
+          cx.fill();
+        }
+
+        /* Badge número presentación — centrado */
+        var numText  = r.presentacion;
+        cx.font      = 'bold 16px JetBrains Mono, monospace';
+        var numW     = cx.measureText(numText).width + 32;
+        var numX     = (W - numW) / 2;
+        var numY     = H_BAR / 2;
+        cx.strokeStyle = C.barColor !== 'transparent' ? C.barColor : C.border;
+        cx.lineWidth   = 1.5;
+        roundRect(cx, numX, numY - 17, numW, 34, 9);
+        cx.stroke();
+        cx.fillStyle    = C.text;
+        cx.textAlign    = 'center';
+        cx.textBaseline = 'middle';
+        cx.fillText(numText, W / 2, numY);
+        
+        var yPos = H_BAR + 16;
+
+        /* ── Detalles ── */
+        if (r.detalles) {
+          cx.font      = '500 15px Outfit, sans-serif';
+          cx.fillStyle = C.dim;
+          cx.textAlign = 'left';
+          cx.textBaseline = 'top';
+          for (var dl = 0; dl < detallesLineas.length; dl++) {
+            cx.fillText(detallesLineas[dl], PAD + 12, yPos + dl * 22);
+          }
+          yPos += detallesLineas.length * 22 + 16;
+        }
+
+        
+        /* ── Bloque CNR ── */
+        if (r.cnr) {
+          cx.fillStyle  = C.bg3;
+          cx.strokeStyle = C.border;
+          cx.lineWidth  = 1;
+          roundRect(cx, PAD, yPos, W - PAD * 2, H_CNR, 10);
+          cx.fill(); cx.stroke();
+
+          var bx = PAD;
+          var bw = W - PAD * 2;
+
+          /* Título Datos generales */
+          cx.font      = 'bold 10px Outfit, sans-serif';
+          cx.fillStyle = C.accent;
+          cx.textAlign = 'left';
+          cx.textBaseline = 'top';
+          cx.fillText('DATOS GENERALES', bx + 14, yPos + 11);
+          cx.strokeStyle = C.border; cx.lineWidth = 1;
+          cx.beginPath(); cx.moveTo(bx, yPos + 30); cx.lineTo(bx + bw, yPos + 30); cx.stroke();
+
+          var fy = yPos + 36;
+          for (var fi = 0; fi < cnrFilas.length; fi++) {
+            cx.font      = '400 12px Outfit, sans-serif';
+            cx.fillStyle = C.muted;
+            cx.textAlign = 'left';
+            cx.fillText(cnrFilas[fi][0], bx + 14, fy);
+            cx.fillStyle = C.dim;
+            /* Wrap valor largo */
+            var valMax  = bw - 110;
+            var valText = cnrFilas[fi][1];
+            cx.font     = '400 12px Outfit, sans-serif';
+            if (cx.measureText(valText).width > valMax) {
+              var partes = valText.split(' ');
+              var vl = ''; var vlines = [];
+              for (var vp = 0; vp < partes.length; vp++) {
+                var vt = vl + (vl ? ' ' : '') + partes[vp];
+                if (cx.measureText(vt).width > valMax) { if (vl) vlines.push(vl); vl = partes[vp]; }
+                else { vl = vt; }
+              }
+              if (vl) vlines.push(vl);
+              for (var vli = 0; vli < vlines.length; vli++) {
+                cx.fillText(vlines[vli], bx + 110, fy + vli * 16);
+              }
+              fy += (vlines.length - 1) * 16;
+            } else {
+              cx.fillText(valText, bx + 110, fy);
+            }
+            fy += ROW_H;
+          }
+
+          /* Título Estado jurídico */
+          if (r.cnr.estado || r.cnr.fechaEstado) {
+            cx.strokeStyle = C.border; cx.lineWidth = 1;
+            cx.beginPath(); cx.moveTo(bx, fy); cx.lineTo(bx + bw, fy); cx.stroke();
+            cx.font      = 'bold 10px Outfit, sans-serif';
+            cx.fillStyle = C.accent;
+            cx.fillText('ESTADO JURÍDICO', bx + 14, fy + 9);
+            fy += 30;
+            if (r.cnr.estado) {
+              cx.font      = '400 12px Outfit, sans-serif';
+              cx.fillStyle = C.muted;
+              cx.fillText('Estado', bx + 14, fy);
+              cx.font      = 'bold 12px Outfit, sans-serif';
+              cx.fillStyle = C.green;
+              var eText = r.cnr.estado;
+              var eLines = [];
+              var eMax   = bw - 110;
+              var eParts = eText.split(' ');
+              var el2    = '';
+              for (var ep = 0; ep < eParts.length; ep++) {
+                var et = el2 + (el2 ? ' ' : '') + eParts[ep];
+                if (cx.measureText(et).width > eMax) { if (el2) eLines.push(el2); el2 = eParts[ep]; }
+                else { el2 = et; }
+              }
+              if (el2) eLines.push(el2);
+              for (var eli = 0; eli < eLines.length; eli++) {
+                cx.fillText(eLines[eli], bx + 110, fy + eli * 16);
+              }
+              fy += Math.max(eLines.length, 1) * ROW_H;
+            }
+            if (r.cnr.fechaEstado) {
+              cx.font = '400 12px Outfit, sans-serif'; cx.fillStyle = C.muted;
+              cx.fillText('Fecha estado', bx + 14, fy);
+              cx.fillStyle = C.dim; cx.fillText(r.cnr.fechaEstado, bx + 110, fy);
+              fy += ROW_H;
+            }
+          }
+          yPos += H_CNR + 10;
+        }
+
+        
+        /* ── Exportar ── */
+        c.toBlob(function(blob) {
+          var file = new File([blob], 'presentacion-' + r.presentacion + '.png', { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: 'Presentación ' + r.presentacion })
+              .catch(function() {});
+          } else {
+            var url = URL.createObjectURL(blob);
+            var a   = document.createElement('a');
+            a.href     = url;
+            a.download = 'presentacion-' + r.presentacion + '.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast('📷 Imagen guardada');
+          }
+        }, 'image/png');
+      }
+
+      /* ── Helpers de canvas ── */
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+      function roundRectTop(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+      function roundRectLeft(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w, y);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+
+
+
+
 
     </script>
 
