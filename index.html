@@ -327,6 +327,15 @@
       #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border-lit); color: var(--text); font-size: 0.83rem; padding: 10px 20px; border-radius: 30px; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 999; white-space: nowrap; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
       #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       canvas { display: none; }
+
+
+      /* ── Status flotante tema claro ── */
+      [data-theme="light"] #status-flotante {
+        background: var(--surface);
+        border-color: var(--border);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      }
+
     </style>
   </head>
   <body>
@@ -378,7 +387,8 @@
             <span class="list-count" id="list-count">0</span>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn-sm sheets-btn" onclick="exportarASheets()">📋📊Sheets</button>
+            <button class="btn-sm sheets-btn" id="btnActualizarMasivo" onclick="actualizarVisiblesCNR()">🔄📋</button>
+            <button class="btn-sm sheets-btn" onclick="exportarASheets()">📋📊</button>
           </div>
         </div>
         <div class="search-wrap">
@@ -458,7 +468,7 @@
          ============================================================ */
       var ESTADOS = [
 
-        { id: 'docinicio',         label: 'Ingresado',      palabrasClave: ['documento ingresado', 'proceso iniciado'],          barColor: '#D2F7FF', badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)' },      
+        { id: 'docinicio',         label: 'Ingresado',      palabrasClave: ['documento ingresado', 'proceso iniciado', 'documento en tramite'],          barColor: '#D2F7FF', badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)' },             
         { id: 'preevaluacion',     label: 'Pre evaluación', palabrasClave: ['pre evaluaci', 'preevaluaci', 'evaluacion previa'], barColor: '#69E2FF', badgeGradient: 'linear-gradient(135deg, #10b981, #6ee7b7)' },             
         { id: 'calificacion',      label: 'En calificación',palabrasClave: ['calificaci'],                                       barColor: '#E6E6FA', badgeGradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },       
         { id: 'escaneoadm',        label: 'Escaneo adm.',   palabrasClave: ['escaneo de expediente', 'escaneo administrativo', 'generando escaneo'], barColor: '#c4b5fd', badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)' },                
@@ -466,6 +476,7 @@
         { id: 'inscritaendespacho',label: 'En despacho',    palabrasClave: ['inscrito y listo'],                                 barColor: '#15803d', badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)' },       
         { id: 'catastro',          label: 'Catastro',       palabrasClave: ['catastro', 'actualización gráfica'],                                         barColor: '#a855f7', badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)' },
         { id: 'observada',         label: 'Observada',      palabrasClave: ['ver notificaci', 'correo electr', 'notificad', 'observad'], barColor: '#dc2626', badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)' },       
+
         { id: 'documentoCancelado',label: 'Rechazado',      palabrasClave: ['cancelado', 'pleno derecho', 'entrega'],            barColor: '#111827', badgeGradient: 'linear-gradient(135deg, #16a34a, #dc2626)'},       
         { id: 'inscritaretirada',  label: 'Retirada',       palabrasClave: ['fue retirado', 'retirado por'],                     barColor: '#94a3b8', badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)'},           
         { id: 'sincategoria',      label: 'Sin categoría',  palabrasClave: [],                                                   barColor: 'transparent', badgeGradient: 'linear-gradient(135deg, var(--accent), #6366f1)' }
@@ -478,6 +489,361 @@
         ORDEN_BLOQUE[ESTADOS[_i].id] = _i;
       }
       var BLOQUE_SIN_ESTADO = ESTADOS.length - 1;
+
+
+
+      /* ============================================================
+   CONSULTA AUTOMÁTICA CNR
+   ============================================================ */
+
+
+      var PROXY_API = 'https://shiny-bread-e818.gx0112358.workers.dev/api?target=';
+      var PROXY_URL = 'https://shiny-bread-e818.gx0112358.workers.dev/url?target=';
+      var CNR_URL   = 'https://www.e.cnr.gob.sv/ConsultaTramite3/consulta/consultaTramite.htm';
+
+
+      /* ViewState cacheado para no recargar la página en cada consulta */
+      var _cnrViewState = null;
+      var _cnrViewStateTime = 0;
+      var CNR_VS_TTL = 5 * 60 * 1000; // 5 minutos de validez
+
+      async function obtenerViewState() {
+        var ahora = Date.now();
+        if (_cnrViewState && (ahora - _cnrViewStateTime) < CNR_VS_TTL) {
+          return _cnrViewState; // Reusar el cacheado
+        }
+        var paginaRes  = await fetch(PROXY_URL + encodeURIComponent(CNR_URL));
+        var paginaHtml = await paginaRes.text();
+        var vsMatch    = paginaHtml.match(/name="javax\.faces\.ViewState"[^>]*value="([^"]+)"/)
+        || paginaHtml.match(/value="([^"]+)"[^>]*name="javax\.faces\.ViewState"/);
+        if (!vsMatch) throw new Error('No se pudo obtener ViewState');
+        _cnrViewState     = vsMatch[1];
+        _cnrViewStateTime = ahora;
+        return _cnrViewState;
+      }
+
+      function invalidarViewState() {
+        _cnrViewState     = null;
+        _cnrViewStateTime = 0;
+      }
+
+
+      async function consultarCNRAutomatico(id) {
+        var r = null;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) { r = registros[i]; break; }
+        }
+        if (!r) return;
+
+        var cnrEl = document.getElementById('cnr-block-' + id);
+        if (cnrEl) cnrEl.innerHTML = '<div class="cnr-empty"><span class="paste-spin"></span> Consultando CNR...</div>';
+
+        try {
+          var viewState = await obtenerViewState();
+
+          var params = new URLSearchParams();
+          params.append('mainForm',                    'mainForm');
+          params.append('mainForm:presentacion',        r.presentacion);
+          params.append('javax.faces.ViewState',        viewState);
+          params.append('javax.faces.source',          'mainForm:j_idt15');
+          params.append('javax.faces.partial.event',   'click');
+          params.append('javax.faces.partial.execute', 'mainForm:tramite mainForm:j_idt15');
+          params.append('javax.faces.partial.render',  'mainForm');
+          params.append('javax.faces.behavior.event',  'action');
+          params.append('javax.faces.partial.ajax',    'true');
+          params.append('mainForm:j_idt15',            '');
+
+          var postRes = await fetch(PROXY_API + encodeURIComponent(CNR_URL), {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    params.toString()
+          });
+
+          var buffer = await postRes.arrayBuffer();
+          var raw    = new TextDecoder('iso-8859-1').decode(buffer);
+
+          // Si el ViewState expiró, renovar y reintentar
+          if (raw.indexOf('ViewExpiredException') >= 0 || raw.indexOf('errorName') >= 0) {
+            invalidarViewState();
+            viewState = await obtenerViewState();
+            params.set('javax.faces.ViewState', viewState);
+            var postRes2 = await fetch(PROXY_API + encodeURIComponent(CNR_URL), {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body:    params.toString()
+            });
+            buffer = await postRes2.arrayBuffer();
+            raw    = new TextDecoder('iso-8859-1').decode(buffer);
+          }
+
+          var htmlResultado = '';
+          var updateMatch   = raw.match(/<update[^>]*id="mainForm"[^>]*>([\s\S]*?)<\/update>/i);
+          if (updateMatch) {
+            htmlResultado = updateMatch[1]
+              .replace(/^<!\[CDATA\[/, '')
+              .replace(/\]\]>$/, '');
+          }
+          if (!htmlResultado) throw new Error('Respuesta vacía');
+
+          var parser = new DOMParser();
+          var doc    = parser.parseFromString(htmlResultado, 'text/html');
+
+          function celdaSiguiente(labelTexto) {
+            var tds = doc.querySelectorAll('td');
+            for (var i = 0; i < tds.length; i++) {
+              if (tds[i].textContent.trim().toLowerCase().indexOf(labelTexto.toLowerCase()) >= 0) {
+                var sig = tds[i].nextElementSibling;
+                if (sig) return sig.textContent.trim();
+              }
+            }
+            return '';
+          }
+
+          // Extraer todos los campos primero
+          var presentacionCNR = celdaSiguiente('mero de presentaci').trim();
+          var matricula       = celdaSiguiente('mero de matr').trim();
+          var acto            = celdaSiguiente('Acto').trim();  // ← variable declarada correctamente
+
+          // Seguridad: verificar que el número coincida con el item
+          if (!presentacionCNR || presentacionCNR !== r.presentacion.trim()) {
+            setStatus ('Sin respuesta válida ' + r.presentacion.trim());         
+            return;
+          }
+
+          var datos = {
+            matricula:    matricula,
+            presentacion: presentacionCNR,
+            fechaPres:    celdaSiguiente('Fecha de presentaci'),
+            direccion:    celdaSiguiente('irecci'),
+            ubicacion:    celdaSiguiente('bicaci'),
+            acto:         acto,                               // ← ahora sí existe
+            estado:       celdaSiguiente('dico y ubicaci'),
+            fechaEstado:  celdaSiguiente('ltimo movimiento'),
+            fechaSync:    new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
+          };
+
+          for (var i = 0; i < registros.length; i++) {
+            if (registros[i].id === id) {
+              registros[i].cnr = datos;
+              delete registros[i].estadoManual;
+              break;
+            }
+          }
+
+        } catch(err) {
+          setStatus ('⚠️error' + err.message + '   ' + r.presentacion.trim() );
+          throw err;
+        }
+      }
+
+      async function btnconsultarCNRAutomatico(id) {
+        await consultarCNRAutomatico(id);
+        guardarEnStorage();
+        renderList();
+      }
+
+
+      async function actualizarVisiblesCNR() {
+        var items = document.querySelectorAll('#registro-list .item:not(.hidden)');
+        if (items.length === 0) { toast('No hay registros visibles.'); return; }
+
+        // Estados a omitir en la actualización masiva
+        var OMITIR_ESTADOS = ['inscritaretirada', 'sincategoria'];
+
+        var ids = [];
+        items.forEach(function(item) {
+          var id = parseInt(item.id.replace('item-', ''));
+          if (isNaN(id)) return;
+
+          // Buscar el registro y verificar su estado
+          for (var i = 0; i < registros.length; i++) {
+            if (registros[i].id === id) {
+              var estado = detectarEstado(registros[i]);
+              var estadoId = estado ? estado.id : 'sincategoria';
+              if (OMITIR_ESTADOS.indexOf(estadoId) === -1) {
+                ids.push(id); // Solo agregar si no está en la lista de omitidos
+              }
+              break;
+            }
+          }
+        });
+
+        if (ids.length === 0) { toast('No hay registros para actualizar.'); return; }
+
+        var btn = document.getElementById('btnActualizarMasivo');
+        if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 0/' + ids.length; }
+
+        var exitosos = 0, fallidos = 0, omitidos = (items.length - ids.length);
+
+        for (var i = 0; i < ids.length; i++) {
+          if (btn) btn.innerHTML = '⏳ ' + (i + 1) + '/' + ids.length;
+
+          try {
+            await consultarCNRAutomatico(ids[i]);
+            exitosos++;
+          } catch(e) {
+            fallidos++;
+          }
+
+          if (i < ids.length - 1) {
+            await new Promise(function(res) { setTimeout(res, 600); });
+          }
+        }
+
+        guardarEnStorage();
+        renderList();
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '🔄📋'; }
+
+                           setStatus('✅' + exitosos + ' actualizados');
+        if (fallidos > 0)  setStatus('❌' + fallidos + ' fallidos');
+        if (omitidos > 0)  setStatus(       omitidos + ' omitidos');
+           
+      }
+
+
+      async function consultarCNRAutomaticotest(id) {
+        var r = null;
+        for (var i = 0; i < registros.length; i++) {
+          if (registros[i].id === id) { r = registros[i]; break; }
+        }
+        if (!r) return;
+
+        var cnrEl = document.getElementById('cnr-block-' + id);
+        if (cnrEl) cnrEl.innerHTML = '<div class="cnr-empty"><span class="paste-spin"></span> Consultando CNR...</div>';
+
+        try {
+          var paginaRes  = await fetch(PROXY_URL + encodeURIComponent(CNR_URL));
+          var paginaHtml = await paginaRes.text();
+
+          var vsMatch = paginaHtml.match(/name="javax\.faces\.ViewState"[^>]*value="([^"]+)"/)
+          || paginaHtml.match(/value="([^"]+)"[^>]*name="javax\.faces\.ViewState"/);
+          if (!vsMatch) {
+            var allInputs = paginaHtml.match(/<input[^>]*ViewState[^>]*>/gi) || [];
+            for (var x = 0; x < allInputs.length; x++) {
+              var vm = allInputs[x].match(/value="([^"]+)"/);
+              if (vm && vm[1].length > 20) { vsMatch = vm; break; }
+            }
+          }
+          if (!vsMatch) throw new Error('No se pudo obtener ViewState');
+
+          var params = new URLSearchParams();
+          params.append('mainForm',                        'mainForm');
+          params.append('mainForm:presentacion',            r.presentacion);
+          params.append('javax.faces.ViewState',            vsMatch[1]);
+          params.append('javax.faces.source',              'mainForm:j_idt15');
+          params.append('javax.faces.partial.event',       'click');
+          params.append('javax.faces.partial.execute',     'mainForm:tramite mainForm:j_idt15');
+          params.append('javax.faces.partial.render',      'mainForm');
+          params.append('javax.faces.behavior.event',      'action');
+          params.append('javax.faces.partial.ajax',        'true');
+          params.append('mainForm:j_idt15',                '');
+
+          var postRes = await fetch(PROXY_API + encodeURIComponent(CNR_URL), {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body:    params.toString()
+          });
+
+          var raw = await postRes.text();
+
+          // ── Extraer innerText igual que antes ──
+          var htmlResultado = '';
+          var updateMatch = raw.match(/<update[^>]*id="mainForm"[^>]*>([\s\S]*?)<\/update>/i);
+          if (updateMatch) {
+            htmlResultado = updateMatch[1].replace(/^<!\[CDATA\[/, '').replace(/\]\]>$/, '');
+          } else {
+            var cdatas = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/g) || [];
+            htmlResultado = cdatas.map(function(c) { return c.slice(9, -3); }).join('\n');
+          }
+
+          var div = document.createElement('div');
+          div.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:800px;visibility:hidden;';
+          div.innerHTML = htmlResultado;
+          document.body.appendChild(div);
+          var textoComoUsuario = div.innerText;
+          document.body.removeChild(div);
+
+          // ── Panel de diagnóstico con las 3 etapas ──
+          var overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:9999;padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;';
+
+          var titulo = document.createElement('div');
+          titulo.style.cssText = 'color:#e2e8f0;font-family:Outfit,sans-serif;font-size:0.9rem;font-weight:600;';
+          titulo.textContent = '🔍 Diagnóstico CNR — ' + r.presentacion;
+          overlay.appendChild(titulo);
+
+          // Tabs
+          var tabs = document.createElement('div');
+          tabs.style.cssText = 'display:flex;gap:8px;flex-shrink:0;';
+
+          var areas = {};
+          var etapas = [
+            { key: 'raw',    label: '1. XML raw',     valor: raw },
+            { key: 'html',   label: '2. HTML extraído', valor: htmlResultado },
+            { key: 'texto',  label: '3. innerText',    valor: textoComoUsuario },
+          ];
+
+          var taContenedor = document.createElement('div');
+          taContenedor.style.cssText = 'flex:1;overflow:hidden;display:flex;';
+
+          etapas.forEach(function(etapa, idx) {
+            var tab = document.createElement('button');
+            tab.textContent = etapa.label;
+            tab.style.cssText = 'padding:5px 12px;border-radius:7px;border:1px solid #2e3f5c;background:' +
+              (idx === 0 ? '#1f2737' : 'transparent') + ';color:#e2e8f0;font-family:Outfit,sans-serif;font-size:0.76rem;cursor:pointer;';
+
+            var ta = document.createElement('textarea');
+            ta.style.cssText = 'flex:1;width:100%;height:100%;background:#0e1117;color:#e2e8f0;font-family:monospace;font-size:0.72rem;padding:10px;border:1px solid #2e3f5c;border-radius:8px;resize:none;display:' + (idx === 0 ? 'block' : 'none') + ';';
+            ta.value = etapa.valor;
+            ta.readOnly = true;
+            areas[etapa.key] = ta;
+            taContenedor.appendChild(ta);
+
+            tab.onclick = function() {
+              etapas.forEach(function(e) { areas[e.key].style.display = 'none'; });
+              tabs.querySelectorAll('button').forEach(function(b) { b.style.background = 'transparent'; });
+              areas[etapa.key].style.display = 'block';
+              tab.style.background = '#1f2737';
+              areas[etapa.key].select();
+            };
+            tabs.appendChild(tab);
+          });
+
+          overlay.appendChild(tabs);
+          overlay.appendChild(taContenedor);
+
+          // Botones de acción
+          var acciones = document.createElement('div');
+          acciones.style.cssText = 'display:flex;gap:8px;flex-shrink:0;';
+
+          var btnCopiar = document.createElement('button');
+          btnCopiar.textContent = '📋 Copiar visible';
+          btnCopiar.style.cssText = 'flex:1;padding:8px;background:#1f2737;color:#e2e8f0;border:1px solid #2e3f5c;border-radius:8px;font-family:Outfit,sans-serif;cursor:pointer;';
+          btnCopiar.onclick = function() {
+            var visible = taContenedor.querySelector('textarea[style*="block"]');
+            if (visible) { visible.select(); navigator.clipboard.writeText(visible.value).then(function() { toast('📋 Copiado'); }); }
+          };
+
+          var btnCerrar = document.createElement('button');
+          btnCerrar.textContent = '✕ Cerrar';
+          btnCerrar.style.cssText = 'padding:8px 20px;background:#ef4444;color:white;border:none;border-radius:8px;font-family:Outfit,sans-serif;cursor:pointer;';
+          btnCerrar.onclick = function() { document.body.removeChild(overlay); };
+
+          acciones.appendChild(btnCopiar);
+          acciones.appendChild(btnCerrar);
+          overlay.appendChild(acciones);
+          document.body.appendChild(overlay);
+
+          // Seleccionar el primer textarea
+          areas['raw'].select();
+
+        } catch (err) {
+          toast('❌ ' + err.message);
+          if (cnrEl) cnrEl.innerHTML = '<div class="cnr-empty">Error diagnóstico: ' + err.message + '</div>';
+          renderList();
+        }
+      }
 
 
       /* ============================================================
@@ -1127,6 +1493,18 @@
           btnEditar.innerHTML = '&#9998; Editar';
           (function(id) { btnEditar.onclick = function() { editarDetalles(id); }; })(r.id);
           bottomRow.appendChild(btnEditar);
+
+          // Botón consulta automática CNR
+          var btnConsultar = document.createElement('button');
+          btnConsultar.className = 'btn-sm link-btn';
+          btnConsultar.innerHTML = '🔄 CNR Auto';
+          btnConsultar.title = 'Consultar CNR automáticamente';
+          (function(id) { 
+            btnConsultar.onclick = function() { btnconsultarCNRAutomatico(id); }; 
+          })(r.id);
+          bottomRow.appendChild(btnConsultar);
+
+
           var timestamp = document.createElement('span');
           timestamp.className = 'item-timestamp';
           timestamp.innerHTML = '&#128336; ' + r.fecha;
@@ -1134,6 +1512,8 @@
           body.appendChild(bottomRow);
           item.appendChild(body);
           list.appendChild(item);
+
+
         }
         if (terminoBusqueda) aplicarFiltro();
       }
@@ -1676,6 +2056,139 @@
       }
 
 
+
+
+
+      /* ============================================================
+   STATUS FLOTANTE
+   ============================================================ */
+      var statusTimer;
+      var statusQueue = [];
+      var statusShowing = false;
+
+      function setStatus(mensaje) {
+        statusQueue.push(mensaje);
+        if (!statusShowing) procesarStatusQueue();
+      }
+
+      function procesarStatusQueue() {
+        if (statusQueue.length === 0) { statusShowing = false; return; }
+        statusShowing = true;
+        var mensaje = statusQueue.shift();
+
+        var el = document.getElementById('status-flotante');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'status-flotante';
+          el.style.cssText = [
+            'position:fixed',
+            'top:16px',
+            'left:50%',
+            'transform:translateX(-50%) translateY(-80px)',
+            'background:var(--surface)',
+            'border:1px solid var(--border-lit)',
+            'color:var(--text)',
+            'font-family:Outfit,sans-serif',
+            'font-size:0.82rem',
+            'font-weight:500',
+            'padding:10px 18px 10px 14px',
+            'border-radius:30px',
+            'box-shadow:0 8px 32px rgba(0,0,0,0.35)',
+            'z-index:9990',
+            'display:flex',
+            'align-items:center',
+            'gap:10px',
+            'white-space:nowrap',
+            'max-width:90vw',
+            'overflow:hidden',
+            'text-overflow:ellipsis',
+            'pointer-events:none',
+            'transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
+            'opacity:0'
+          ].join(';');
+          document.body.appendChild(el);
+        }
+
+        // Barra de progreso interior
+        var barra = document.getElementById('status-barra');
+        if (!barra) {
+          barra = document.createElement('div');
+          barra.id = 'status-barra';
+          barra.style.cssText = [
+            'position:absolute',
+            'bottom:0',
+            'left:0',
+            'height:2px',
+            'width:100%',
+            'background:var(--accent)',
+            'border-radius:0 0 30px 30px',
+            'transform-origin:left',
+            'transition:none'
+          ].join(';');
+          el.appendChild(barra);
+        }
+
+        el.innerHTML = '';
+        el.appendChild(barra);
+
+        // Ícono según contenido
+        var icono = document.createElement('span');
+        icono.style.cssText = 'font-size:1rem;flex-shrink:0;';
+        if      (mensaje.indexOf('✅') >= 0) icono.textContent = '✅';
+        else if (mensaje.indexOf('❌') >= 0) icono.textContent = '❌';
+        else if (mensaje.indexOf('⚠️') >= 0) icono.textContent = '⚠️';
+        else if (mensaje.indexOf('⏳') >= 0) icono.textContent = '⏳';
+        else if (mensaje.indexOf('⏭️') >= 0) icono.textContent = '⏭️';
+        else                                  icono.textContent = 'ℹ️';
+
+        // Texto limpio (sin el emoji inicial si ya lo pusimos)
+        var textoLimpio = mensaje
+        .replace(/^[✅❌⚠️⏳⏭️ℹ️]\s*/, '')
+        .trim();
+
+        var texto = document.createElement('span');
+        texto.textContent = textoLimpio || mensaje;
+        texto.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;';
+
+        // Contador de cola
+        if (statusQueue.length > 0) {
+          var cola = document.createElement('span');
+          cola.style.cssText = [
+            'font-size:0.68rem',
+            'background:var(--border)',
+            'color:var(--text-muted)',
+            'padding:1px 7px',
+            'border-radius:20px',
+            'flex-shrink:0'
+          ].join(';');
+          cola.textContent = '+' + statusQueue.length;
+          el.insertBefore(cola, barra);
+        }
+
+        el.insertBefore(icono, barra);
+        el.insertBefore(texto, barra);
+
+        // Mostrar con animación
+        requestAnimationFrame(function() {
+          el.style.opacity    = '1';
+          el.style.transform  = 'translateX(-50%) translateY(0)';
+          barra.style.transition = 'none';
+          barra.style.transform  = 'scaleX(1)';
+
+          // Iniciar reducción de barra
+          requestAnimationFrame(function() {
+            barra.style.transition = 'transform 2.8s linear';
+            barra.style.transform  = 'scaleX(0)';
+          });
+        });
+
+        clearTimeout(statusTimer);
+        statusTimer = setTimeout(function() {
+          el.style.opacity   = '0';
+          el.style.transform = 'translateX(-50%) translateY(-80px)';
+          setTimeout(procesarStatusQueue, 320);
+        }, 3000);
+      }
 
 
 
