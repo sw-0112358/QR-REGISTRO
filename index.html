@@ -472,37 +472,35 @@
 
         { id: 'docinicio',         label: 'Ingresado',      palabrasClave: ['documento ingresado', 'proceso iniciado', 'documento en tramite'],
          barColor: '#D2F7FF', badgeGradient: 'linear-gradient(135deg, #4ade80, #bbf7d0)' },             
-       
+
         { id: 'preevaluacion',     label: 'Pre evaluación', palabrasClave: ['Pre evaluación del documento'],
          barColor: '#69E2FF', badgeGradient: 'linear-gradient(135deg, #10b981, #6ee7b7)' },             
-        
-        { id: 'calificacion',      label: 'En calificación',palabrasClave: ['En calificación del registrador'],
+
+        { id: 'calificacion',      label: 'En calificación',palabrasClave: ['En calificación del registrador', 'En elaboración y digitación'],
          barColor: '#E6E6FA', badgeGradient: 'linear-gradient(135deg, #d97706, #f59e0b)' },       
-       
+
         { id: 'escaneoadm',        label: 'Escaneo adm.',   palabrasClave: ['Generando escaneo de expediente administrativo'],
          barColor: '#c4b5fd', badgeGradient: 'linear-gradient(135deg, #16a34a, #4ade80)' },                
-        
+
         { id: 'asesoria',          label: 'Asesoría',       palabrasClave: ['asesoria'],
-         barColor: '#60a5fa', badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' },     
-        
-        { id: 'inscritaendespacho',label: 'En despacho',    palabrasClave: ['DOCUMENTO INSCRITO Y LISTO PARA SU ENTREGA'],
-         barColor: '#15803d', badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)' },       
+         barColor: '#60a5fa', badgeGradient: 'linear-gradient(135deg, #f87171, #fca5a5)' },
         
         { id: 'catastro',          label: 'Catastro',       palabrasClave: ['catastro', 'actualización gráfica'],
          barColor: '#a855f7', badgeGradient: 'linear-gradient(135deg, #7c3aed, #a855f7)' },
+
+        { id: 'inscritaendespacho',label: 'En despacho',    palabrasClave: ['DOCUMENTO INSCRITO Y LISTO PARA SU ENTREGA', 'Certificación autorizada. Lista para entregarse.'],
+         barColor: '#15803d', badgeGradient: 'linear-gradient(135deg, #14532d, #15803d)' },     
         
-        { id: 'observada',         label: 'Observada',      palabrasClave: ['Ver notificación en correo electrónico'],
+        { id: 'observada',         label: 'Observada',      palabrasClave: ['Ver notificación en correo electrónico','Solicitud observada'],
          barColor: '#dc2626', badgeGradient: 'linear-gradient(135deg, #dc2626, #ef4444)' },       
 
-        
-        
-        
+
         { id: 'documentoCancelado',label: 'Rechazado',      palabrasClave: ['DOCUMENTO CANCELADO DE PLENO DERECHO Y LISTO PARA SU ENTREGA'],
          barColor: '#111827', badgeGradient: 'linear-gradient(135deg, #16a34a, #dc2626)'},       
-        
+
         { id: 'inscritaretirada',  label: 'Retirada',       palabrasClave: ['DOCUMENTO INSCRITO FUE RETIRADO POR'],
          barColor: '#94a3b8', badgeGradient: 'linear-gradient(135deg, #64748b, #94a3b8)'},           
-       
+
         { id: 'sincategoria',      label: 'Sin categoría',  palabrasClave: [],
          barColor: 'transparent', badgeGradient: 'linear-gradient(135deg, var(--accent), #6366f1)' }
 
@@ -557,6 +555,15 @@
         _cnrViewStateTime = 0;
       }
 
+      // 📋 Función para copiar texto al portapapeles
+      async function copiarAlPortapapeles(texto) {
+        try {
+          await navigator.clipboard.writeText(texto);    
+        } catch (err) {        
+          alert("⚠️ No se pudo copiar el texto");
+        }
+      }
+
 
       async function consultarCNRAutomatico(id) {
         var r = null;
@@ -606,6 +613,8 @@
             raw    = new TextDecoder('iso-8859-1').decode(buffer);
           }
 
+        //  copiarAlPortapapeles(raw);
+
           var htmlResultado = '';
           var updateMatch   = raw.match(/<update[^>]*id="mainForm"[^>]*>([\s\S]*?)<\/update>/i);
           if (updateMatch) {
@@ -630,25 +639,30 @@
           }
 
           // Extraer todos los campos primero
-          var presentacionCNR = celdaSiguiente('mero de presentaci').trim();
+
           var matricula       = celdaSiguiente('mero de matr').trim();
-          var acto            = celdaSiguiente('Acto').trim();  // ← variable declarada correctamente
+          var acto            = celdaSiguiente('Acto').trim();
+          var presentacionCNR = (celdaSiguiente('mero de presentaci') || celdaSiguiente('mero de solicitud')).trim();
 
           // Seguridad: verificar que el número coincida con el item
+
           if (!presentacionCNR || presentacionCNR !== r.presentacion.trim()) {
-            setStatus ('Sin respuesta válida ' + r.presentacion.trim());         
+            setStatus('Sin respuesta válida ' + r.presentacion.trim());
             return;
           }
 
+
           var datos = {
-            matricula:    matricula,
+            matricula:    matricula || celdaSiguiente('Solicitante'),   // formato 2 no tiene matrícula
             presentacion: presentacionCNR,
-            fechaPres:    celdaSiguiente('Fecha de presentaci'),
-            direccion:    celdaSiguiente('irecci'),
+            fechaPres:    celdaSiguiente('Fecha de presentaci'),        // ambos formatos la tienen
+            direccion:    celdaSiguiente('irecci'),                     // formato 2 la tiene en estado jurídico
             ubicacion:    celdaSiguiente('bicaci'),
-            acto:         acto,                               // ← ahora sí existe
-            estado:       celdaSiguiente('dico y ubicaci'),
-            fechaEstado:  celdaSiguiente('ltimo movimiento'),
+            acto:         acto || celdaSiguiente('Servicio'),           // formato 2 usa "Servicio"
+            estado:       celdaSiguiente('dico y ubicaci') || celdaSiguiente('Estado'),   // formato 2 usa "Estado"
+            fechaEstado:  celdaSiguiente('ltimo movimiento') || celdaSiguiente('Fecha de finalizado'),
+            solicitante:  celdaSiguiente('Solicitante'),                // campo nuevo, solo formato 2
+            observacion:  celdaSiguiente('Observacion'),                // campo nuevo, solo formato 2
             fechaSync:    new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
           };
 
@@ -1019,7 +1033,7 @@
         var url = qrUrl || CNR_CONSULTA;
         window.open(url, '_blank', 'noopener,noreferrer');
         if (!qrUrl) {
-          navigator.clipboard.writeText(presentacion).catch(function() {});
+          navigator.clipboard.writeText(presentacion).catch(function() {});       
           setStatus('CNR abierto y N° copiado al portapapeles');
         }
       }
@@ -1105,15 +1119,18 @@
           var m = texto.match(/estado jur[íi]dico y ubicaci[óo]n del documento[:\t\s]*([^\n\r]+(?:[\n\r]+(?!fecha del estado)[^\n\r]+)*)/i);
           return m ? m[1].replace(/\s+/g, ' ').trim() : '';
         }
+
         return {
           matricula:    extraer('N\u00famero de matr\u00edcula'),
-          presentacion: extraer('N\u00famero de presentaci\u00f3n'),
+          presentacion: extraer('N\u00famero de presentaci\u00f3n') || extraer('N\u00famero de solicitud'),
           fechaPres:    extraer('Fecha de presentaci\u00f3n'),
           direccion:    extraer('Direcci\u00f3n'),
           ubicacion:    extraer('Ubicaci\u00f3n'),
-          acto:         extraer('Acto'),
-          estado:       extraerEstado(),
-          fechaEstado:  extraer('Fecha del estado y fecha del \u00faltimo movimiento'),
+          acto:         extraer('Acto') || extraer('Servicio'),
+          estado:       extraerEstado() || extraer('Estado'),
+          solicitante:  extraer('Solicitante'),
+          observacion:  extraer('Observacion'),
+          fechaEstado:  extraer('Fecha del estado y fecha del \u00faltimo movimiento') || extraer('Fecha de finalizado'),
           fechaSync:    new Date().toLocaleString('es-SV', { dateStyle: 'short', timeStyle: 'short' })
         };
       }
@@ -1159,7 +1176,9 @@
         agregarFila(filasGenerales, 'Fecha pres.',  r.cnr.fechaPres);
         agregarFila(filasGenerales, 'Dirección',    r.cnr.direccion);
         agregarFila(filasGenerales, 'Ubicación',    r.cnr.ubicacion);
-        agregarFila(filasGenerales, 'Acto',         r.cnr.acto);
+        agregarFila(filasGenerales, 'Acto',         r.cnr.acto);                
+        agregarFila(filasGenerales, 'Solicitante', r.cnr.solicitante);
+
         var tituloEstado = document.createElement('div');
         tituloEstado.className = 'cnr-section-title';
         tituloEstado.style.borderTop = '1px solid var(--border)';
@@ -1182,7 +1201,8 @@
           filasEstado.appendChild(filaEstado);
         }
         agregarFila(filasEstado, 'Fecha estado', r.cnr.fechaEstado);
-        agregarFila(filasEstado, 'Actualizado',  r.cnr.fechaSync);
+        agregarFila(filasEstado, 'Actualizado',  r.cnr.fechaSync);        
+        agregarFila(filasEstado, 'Observación', r.cnr.observacion);        
         return bloque;
       }
 
