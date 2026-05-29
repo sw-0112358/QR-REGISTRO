@@ -712,6 +712,23 @@
             }
           }
 
+
+          // Re-renderizar bloque CNR en el DOM
+          var cnrElFinal = document.getElementById('cnr-block-' + id);
+          if (cnrElFinal) {
+            var rActual = null;
+            for (var i = 0; i < registros.length; i++) {
+              if (registros[i].id === id) { rActual = registros[i]; break; }
+            }
+            if (rActual) {
+              var nuevoBloque = renderCNRBlock(rActual);
+              cnrElFinal.parentNode.replaceChild(nuevoBloque, cnrElFinal);
+              aplicarColorTarjeta(id, detectarEstado(rActual));
+              actualizarSlider(id, rActual);
+            }
+          }
+
+
         } catch(err) {
           setStatus ('⚠️error' + err.message + '   ' + r.presentacion.trim() );
           throw err;
