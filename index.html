@@ -964,6 +964,15 @@
       }
 
 
+      function obtenerSiguienteNumero() {
+        for (var i = 1; i < registros.length; i++) {
+          if (registros[i].presentacion.indexOf('202611') === 0) {
+            return registros[i].presentacion;
+          }
+        }
+        return numerodepresentacion;
+      }
+
       /* ============================================================
          INIT
          ============================================================ */
@@ -972,7 +981,7 @@
         cargarDesdeStorage();
         renderList();
         resetearVista();
-        limpiarFormulario(numerodepresentacion);
+        limpiarFormulario(obtenerSiguienteNumero());
       });
 
 
