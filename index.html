@@ -343,7 +343,10 @@
       </div>
 
       <div class="card">
-        <div class="card-title">&#128203; Nueva entrada</div>
+        <div class="card-title" onclick="abrirConfigWorker()" 
+             style="cursor:pointer;" title="Configurar Worker URL">
+          &#128203; Nueva entrada
+        </div>
         <div class="form-grid">
           <div class="field">
             <label>N&#176; de Presentaci&#243;n</label>
@@ -543,10 +546,27 @@
    ============================================================ */
 
 
-      var PROXY_API = 'https://shiny-bread-e818.gx0112358.workers.dev/api?target=';
-      var PROXY_URL = 'https://shiny-bread-e818.gx0112358.workers.dev/url?target=';
-      var CNR_URL   = 'https://www.e.cnr.gob.sv/ConsultaTramite3/consulta/consultaTramite.htm';
+      let CF_WORKER = localStorage.getItem('_cf_worker_url');
+      let PROXY_API = CF_WORKER + '/api?target=';
+      let PROXY_URL = CF_WORKER + '/url?target=';
 
+
+      function abrirConfigWorker() {
+        var actual = localStorage.getItem('_cf_worker_url')
+        || 'https://shiny-bread-e818.gx0112358.workers.dev';
+        var nueva = prompt('☁️ Cloudflare Worker URL:', actual);
+        if (nueva === null) return;
+        if (!nueva.trim()) { toast('⚠️ URL vacía, no se guardó.'); return; }
+        var url = nueva.trim().replace(/\/$/, '');
+        localStorage.setItem('_cf_worker_url', url);
+        CF_WORKER = url;
+        PROXY_API = url + '/api?target=';
+        PROXY_URL = url + '/url?target=';
+        toast('✅ Worker URL actualizado');
+      }
+
+
+      var CNR_URL   = 'https://www.e.cnr.gob.sv/ConsultaTramite3/consulta/consultaTramite.htm';
 
       /* ViewState cacheado para no recargar la página en cada consulta */
       var _cnrViewState = null;
@@ -753,13 +773,13 @@
           // Buscar el registro y verificar su estado
           for (var i = 0; i < registros.length; i++) {
             if (registros[i].id === id) {
-             
+
               var estado = detectarEstado(registros[i]);
               var estadoId = estado ? estado.id : 'sincategoria';
               if (terminoBusqueda || OMITIR_ESTADOSCNR.indexOf(estadoId) === -1) {
                 ids.push(id); // Si hay búsqueda activa, ignorar omisión por estado
               }
-                   
+
               break;
             }
           }
