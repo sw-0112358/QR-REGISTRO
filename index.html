@@ -333,105 +333,105 @@
   </head>
   <body>
     <div id="pantalla1" style="display:block;">
-    <div class="page">
+      <div class="page">
 
-      <div class="header">
-        <div class="header-icon">&#11035;</div>
-        <div class="header-text">
-          <h1>Registro QR</h1>
-          <p>Captura y seguimiento de presentaciones CNR</p>
+        <div class="header">
+          <div class="header-icon">&#11035;</div>
+          <div class="header-text">
+            <h1>Registro QR</h1>
+            <p>Captura y seguimiento de presentaciones CNR</p>
+          </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div class="card-title" onclick="abrirConfigWorker()" 
-             style="cursor:pointer;" title="Configurar Worker URL">
-          &#128203; Nueva entrada
-        </div>
-        <div class="form-grid">
-          <div class="field">
-            <label>N&#176; de Presentaci&#243;n</label>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <input type="text" id="txtPresentacion" 
-                     oninput="verificarDuplicado(this.value)" style="flex:1;">
+        <div class="card">
+          <div class="card-title" onclick="abrirConfigWorker()" 
+               style="cursor:pointer;" title="Configurar Worker URL">
+            &#128203; Nueva entrada
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>N&#176; de Presentaci&#243;n</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" id="txtPresentacion" 
+                       oninput="verificarDuplicado(this.value)" style="flex:1;">
+              </div>
+            </div>
+            <div class="field">
+              <label>Detalles</label>
+              <textarea id="txtDetalles" placeholder="Descripci&#243;n, notas adicionales&#8230;"></textarea>
+            </div>
+            <div class="field">
+              <label>Imagen con c&#243;digo QR <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+              <div class="drop-zone" id="dropZone">
+                <input type="file" id="fileInput" accept="image/*">
+                <span class="drop-icon">&#128444;&#65039;</span>
+                <div class="drop-label"><strong>Selecciona</strong> o arrastra la imagen aqu&#237;</div>
+              </div>
+              <div id="qr-badge"><span>&#9989;</span><span id="qr-text-badge"></span></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">➕Agregar</button>  
+              <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">📃📊Importar</button>        
             </div>
           </div>
-          <div class="field">
-            <label>Detalles</label>
-            <textarea id="txtDetalles" placeholder="Descripci&#243;n, notas adicionales&#8230;"></textarea>
-          </div>
-          <div class="field">
-            <label>Imagen con c&#243;digo QR <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
-            <div class="drop-zone" id="dropZone">
-              <input type="file" id="fileInput" accept="image/*">
-              <span class="drop-icon">&#128444;&#65039;</span>
-              <div class="drop-label"><strong>Selecciona</strong> o arrastra la imagen aqu&#237;</div>
+        </div>
+        <div class="card">
+          <div class="list-header">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="btn-sort" id="btnOrdenar" onclick="ordenarYRenderizar()" title="Ordenar por bloques de estado">
+                <span class="sort-icon">⇅</span>r</button>
+
+              <button class="btn-sm sheets-btn" onclick="generarImagenesSemana()" title="Generar imágenes de la semana">🗂️</button>           
+              <button class="btn-sort" onclick="resetearVista()" title="Resetear vista">🔄</button>       
+              <span class="list-count" id="list-count">0</span>
             </div>
-            <div id="qr-badge"><span>&#9989;</span><span id="qr-text-badge"></span></div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn-sm sheets-btn" id="btnActualizarMasivo" onclick="actualizarVisiblesCNR()">🔄📋</button>
+              <button class="btn-sm sheets-btn" onclick="exportarASheets()">📋📊</button>
+            </div>
           </div>
-          <div class="btn-row">
-            <button class="btn btn-success" onclick="agregarRegistro()" style="font-size:0.84rem;padding:9px 14px;">➕Agregar</button>  
-            <button class="btn btn-import"  onclick="importarDeSheets()" style="font-size:0.84rem;padding:9px 14px;">📃📊Importar</button>        
+          <div class="search-wrap">
+            <input class="search-input" type="text" id="searchInput"
+                   placeholder="Buscar por presentaci&#243;n, detalles, estado, matr&#237;cula&#8230;"
+                   onkeydown="if(event.key==='Enter') ejecutarBusqueda()">
+            <button class="search-btn" onclick="ejecutarBusqueda()" title="Buscar">&#128269;</button>
+            <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar">&#x2715;</button>
+          </div>
+          <div class="search-count" id="searchCount"></div>
+          <div id="registro-list">
+            <div class="empty-state">
+              <span class="empty-icon">&#128235;</span>
+              No hay registros a&#250;n.<br>Completa el formulario y agrega el primero.
+            </div>
           </div>
         </div>
-      </div>
-      <div class="card">
-        <div class="list-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <button class="btn-sort" id="btnOrdenar" onclick="ordenarYRenderizar()" title="Ordenar por bloques de estado">
-              <span class="sort-icon">⇅</span>r</button>
 
-            <button class="btn-sm sheets-btn" onclick="generarImagenesSemana()" title="Generar imágenes de la semana">🗂️</button>           
-            <button class="btn-sort" onclick="resetearVista()" title="Resetear vista">🔄</button>       
-            <span class="list-count" id="list-count">0</span>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="btn-sm sheets-btn" id="btnActualizarMasivo" onclick="actualizarVisiblesCNR()">🔄📋</button>
-            <button class="btn-sm sheets-btn" onclick="exportarASheets()">📋📊</button>
-          </div>
-        </div>
-        <div class="search-wrap">
-          <input class="search-input" type="text" id="searchInput"
-                 placeholder="Buscar por presentaci&#243;n, detalles, estado, matr&#237;cula&#8230;"
-                 onkeydown="if(event.key==='Enter') ejecutarBusqueda()">
-          <button class="search-btn" onclick="ejecutarBusqueda()" title="Buscar">&#128269;</button>
-          <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar">&#x2715;</button>
-        </div>
-        <div class="search-count" id="searchCount"></div>
-        <div id="registro-list">
-          <div class="empty-state">
-            <span class="empty-icon">&#128235;</span>
-            No hay registros a&#250;n.<br>Completa el formulario y agrega el primero.
-          </div>
-        </div>
       </div>
-
-    </div>
     </div><!-- fin pantalla1 -->
 
     <div id="pantalla2" style="display:none;">
-    <!-- ── Modal de confirmación para Limpiar todo ── -->
-    <div id="confirm-overlay">
-      <div id="confirm-box">
-        <div class="confirm-icon">&#128465;&#65039;</div>
-        <div class="confirm-title">¿Limpiar todos los registros?</div>
-        <div class="confirm-desc">
-          Esta acción eliminará permanentemente todos los registros y vaciará el almacenamiento local.<br>
-          <strong style="color:var(--text)">No se puede deshacer.</strong>
-        </div>
-        <div class="confirm-count" id="confirm-count">0 registros se eliminarán</div>
-        <div class="confirm-actions">
-          <button class="btn-confirm-cancel" onclick="cerrarConfirm()">Cancelar</button>
-          <button class="btn-confirm-ok"     onclick="confirmarLimpiarTodo()">Sí, limpiar todo</button>
+      <!-- ── Modal de confirmación para Limpiar todo ── -->
+      <div id="confirm-overlay">
+        <div id="confirm-box">
+          <div class="confirm-icon">&#128465;&#65039;</div>
+          <div class="confirm-title">¿Limpiar todos los registros?</div>
+          <div class="confirm-desc">
+            Esta acción eliminará permanentemente todos los registros y vaciará el almacenamiento local.<br>
+            <strong style="color:var(--text)">No se puede deshacer.</strong>
+          </div>
+          <div class="confirm-count" id="confirm-count">0 registros se eliminarán</div>
+          <div class="confirm-actions">
+            <button class="btn-confirm-cancel" onclick="cerrarConfirm()">Cancelar</button>
+            <button class="btn-confirm-ok"     onclick="confirmarLimpiarTodo()">Sí, limpiar todo</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <button onclick="alternarPantalla()" id="btn-pantalla"
-      style="position:fixed;bottom:68px;right:12px;z-index:999;
-             background:var(--accent);color:#fff;border:none;
-             border-radius:50%;width:42px;height:42px;font-size:1.1rem;
-             cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.4);">🔁</button>
+      <button onclick="alternarPantalla()" id="btn-pantalla"
+              style="position:fixed;bottom:68px;right:12px;z-index:999;
+                     background:var(--accent);color:#fff;border:none;
+                     border-radius:50%;width:42px;height:42px;font-size:1.1rem;
+                     cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,0.4);">🔁</button>
 
     </div><!-- fin pantalla2 -->
 
@@ -439,29 +439,29 @@
       <!-- ✨ Botón Limpiar todo — antes del indicador de peso -->
       <button class="storage-btn-clear" onclick="abrirConfirm()" title="Limpiar todos los registros">✨</button>
       <div class="bar-sep"></div>
-    
+
       <span id="storage-size">&#128190; --</span>
-      
+
       <div class="bar-sep"></div>
       <span id="cloud-size" onclick="actualizarPesoCloud()" title="Ver peso en nube"
             style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;
                    color:var(--text-muted);cursor:pointer;white-space:nowrap;">☁️ --</span>     
-      
+
       <div class="bar-sep"></div>
       <div style="position:relative;display:inline-block;">
         <button class="storage-btn" onclick="toggleMenuBackup()">⬇Backup</button>
         <div id="menu-backup" style="display:none;position:absolute;bottom:32px;left:0;
-             background:var(--surface);border:1px solid var(--border-lit);border-radius:8px;
-             padding:4px;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;">
+                                     background:var(--surface);border:1px solid var(--border-lit);border-radius:8px;
+                                     padding:4px;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;">
           <button onclick="exportarBackup();cerrarMenus()" 
-            style="display:block;width:100%;text-align:left;padding:6px 10px;
-                   background:none;border:none;color:var(--text);font-size:.78rem;
-                   cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
+                  style="display:block;width:100%;text-align:left;padding:6px 10px;
+                         background:none;border:none;color:var(--text);font-size:.78rem;
+                         cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
             💾 Local</button>
           <button onclick="cloudGuardar();cerrarMenus()"
-            style="display:block;width:100%;text-align:left;padding:6px 10px;
-                   background:none;border:none;color:var(--text);font-size:.78rem;
-                   cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
+                  style="display:block;width:100%;text-align:left;padding:6px 10px;
+                         background:none;border:none;color:var(--text);font-size:.78rem;
+                         cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
             ☁️ Cloud</button>
         </div>
       </div>
@@ -469,17 +469,17 @@
       <div style="position:relative;display:inline-block;">
         <button class="storage-btn" onclick="toggleMenuCargar()">⬆⬆</button>
         <div id="menu-cargar" style="display:none;position:absolute;bottom:32px;left:0;
-             background:var(--surface);border:1px solid var(--border-lit);border-radius:8px;
-             padding:4px;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;">
+                                     background:var(--surface);border:1px solid var(--border-lit);border-radius:8px;
+                                     padding:4px;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,.2);z-index:1000;">
           <button onclick="document.getElementById('importBackupFile').click();cerrarMenus()"
-            style="display:block;width:100%;text-align:left;padding:6px 10px;
-                   background:none;border:none;color:var(--text);font-size:.78rem;
-                   cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
+                  style="display:block;width:100%;text-align:left;padding:6px 10px;
+                         background:none;border:none;color:var(--text);font-size:.78rem;
+                         cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
             💾 Local</button>
           <button onclick="cloudCargar();cerrarMenus()"
-            style="display:block;width:100%;text-align:left;padding:6px 10px;
-                   background:none;border:none;color:var(--text);font-size:.78rem;
-                   cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
+                  style="display:block;width:100%;text-align:left;padding:6px 10px;
+                         background:none;border:none;color:var(--text);font-size:.78rem;
+                         cursor:pointer;border-radius:5px;font-family:'JetBrains Mono',monospace;">
             ☁️ Cloud</button>
         </div>
       </div>
@@ -1058,14 +1058,14 @@
       /* ============================================================
          INIT
          ============================================================ */
-     document.addEventListener('click', function(e) {
+      document.addEventListener('click', function(e) {
         if (!e.target.closest('#menu-backup') && !e.target.closest('#menu-cargar')
             && !e.target.closest('[onclick="toggleMenuBackup()"]')
             && !e.target.closest('[onclick="toggleMenuCargar()"]')) {
           cerrarMenus();
         }
       });
-      
+
       window.addEventListener('DOMContentLoaded', function() {
         cargarTema();
         cargarDesdeStorage();
@@ -1427,9 +1427,108 @@
         for (var i = 0; i < registros.length; i++) {
           var r      = registros[i];
           var estado = detectarEstado(r);
-          var item   = document.createElement('div');
+
+          /* ── Wrapper externo swipe ── */
+          var swipeWrapper = document.createElement('div');
+          swipeWrapper.style.cssText = 'position:relative;border-radius:12px;';
+
+          /* Fondo verde — CNR Auto (deslizar derecha) */
+          var swipeCNRBg = document.createElement('div');
+          swipeCNRBg.style.cssText = 'position:absolute;inset:0;border-radius:12px;background:#22c55e;display:flex;align-items:center;justify-content:flex-start;padding:0 20px;font-size:13px;font-weight:600;color:#fff;opacity:0;pointer-events:none;z-index:0;transition:opacity .1s;';
+          swipeCNRBg.textContent = '-☁️Actualizar🔁-';
+          swipeWrapper.appendChild(swipeCNRBg);
+
+          /* Fondo lavanda — Editar (deslizar izquierda) */
+          var swipeEditBg = document.createElement('div');
+          swipeEditBg.style.cssText = 'position:absolute;inset:0;border-radius:12px;background:#a78bfa;display:flex;align-items:center;justify-content:flex-end;padding:0 20px;font-size:13px;font-weight:600;color:#fff;opacity:0;pointer-events:none;z-index:0;transition:opacity .1s;';
+          swipeEditBg.textContent = '✎ Editar';
+          swipeWrapper.appendChild(swipeEditBg);
+
+          /* Item principal */
+          var item = document.createElement('div');
           item.className = 'item';
           item.id = 'item-' + r.id;
+          item.style.cssText = 'position:relative;z-index:1;will-change:transform;touch-action:pan-y;';
+
+          /* Swipe logic */
+          (function(el, cnrBg, editBg, rid) {
+            var startX = 0, curX = 0, swiping = false;
+            var MAX = 120;
+            el.addEventListener('touchstart', function(e) {
+              startX = e.touches[0].clientX; curX = 0; swiping = true;
+              el.style.transition = '';
+            }, { passive: true });
+            el.addEventListener('touchmove', function(e) {
+              if (!swiping) return;
+              var dx = e.touches[0].clientX - startX;
+              if (dx > 0) {
+                curX = Math.min(dx, MAX);
+                el.style.transform = 'translateX(' + curX + 'px)';
+                cnrBg.style.opacity  = curX / MAX;
+                editBg.style.opacity = '0';
+              } else {
+                curX = Math.max(dx, -MAX);
+                el.style.transform = 'translateX(' + curX + 'px)';
+                editBg.style.opacity  = Math.abs(curX) / MAX;
+                cnrBg.style.opacity   = '0';
+              }
+            }, { passive: true });
+            el.addEventListener('touchend', function() {
+              swiping = false;
+              var activado = curX;
+              el.style.transition  = 'transform .2s ease';
+              el.style.transform   = 'translateX(0)';
+              editBg.style.opacity = '0';
+              setTimeout(function() { el.style.transition = ''; }, 220);
+              if (activado >= MAX * 0.72) {
+                // Mantener fondo pero cambiar a ámbar mientras consulta
+                cnrBg.style.background = '#f59e0b';
+                cnrBg.style.opacity    = '0.7';
+                cnrBg.textContent      = '⏳ Consultando…';
+                // Feedback visual: item pegado en ámbar mientras consulta
+                var itemEl = document.getElementById('item-' + rid);
+                if (itemEl) {
+                  itemEl.style.transition = 'transform .15s ease, box-shadow .15s, border-color .15s';
+                  itemEl.style.transform  = 'translateX(18px)';
+                  itemEl.style.borderColor = '#f59e0b';
+                  itemEl.style.boxShadow  = '0 0 0 2px rgba(245,158,11,0.3)';
+                }
+                            
+                btnconsultarCNRAutomatico(rid).then(function() {
+                  cnrBg.style.opacity    = '0';
+                  cnrBg.style.background = '#22c55e';
+                  cnrBg.textContent      = '-☁️Actualizar🔁-';
+                  var itemEl = document.getElementById('item-' + rid);
+                  if (itemEl) {
+                    itemEl.style.transition  = 'transform .3s ease, box-shadow .3s, border-color .3s';
+                    itemEl.style.transform   = 'translateX(0)';
+                    itemEl.style.borderColor = '';
+                    itemEl.style.boxShadow   = '';
+                    setTimeout(function() { if (itemEl) itemEl.style.transition = ''; }, 320);
+                  }
+                }).catch(function() {
+                  cnrBg.style.opacity    = '0';
+                  cnrBg.style.background = '#22c55e';
+                  cnrBg.textContent      = '-☁️Actualizar🔁-';
+                  var itemEl = document.getElementById('item-' + rid);
+                  if (itemEl) {
+                    itemEl.style.transition  = 'transform .3s ease, box-shadow .3s, border-color .3s';
+                    itemEl.style.transform   = 'translateX(0)';
+                    itemEl.style.borderColor = '';
+                    itemEl.style.boxShadow   = '';
+                    setTimeout(function() { if (itemEl) itemEl.style.transition = ''; }, 320);
+                  }
+                });
+              } else if (activado <= -MAX * 0.72) {
+                var body = document.getElementById('body-' + rid);
+                if (body) body.classList.remove('collapsed');
+                editarDetalles(rid);
+              }
+              curX = 0;
+            });
+          })(item, swipeCNRBg, swipeEditBg, r.id);
+
+          swipeWrapper.appendChild(item);
 
           /* ── Barra superior ── */
           var bar = document.createElement('div');
@@ -1452,8 +1551,6 @@
           (function(id) { numBadge.onclick = function() { toggleItem(id); }; })(r.id);
           bar.appendChild(numBadge);
 
-
-
           var spacer = document.createElement('div');
           spacer.style.flex = '1';
           bar.appendChild(spacer);
@@ -1463,14 +1560,10 @@
           btnShare.style.cssText = 'border:none;background:transparent;font-size:1.05rem;padding:4px 6px;line-height:1;color:var(--text-muted);';
           btnShare.title = 'Compartir imagen';
           btnShare.innerHTML = '🖼️';
-          (function(r) {
-            btnShare.onclick = function() { compartirComoImagen(r); };
-          })(r);
+          (function(r) { btnShare.onclick = function() { compartirComoImagen(r); }; })(r);
           bar.appendChild(btnShare);
 
           var btnLink = document.createElement('button');
-
-
           btnLink.className = 'btn-sm link-btn';
           if (r.qr) {
             btnLink.title = 'Abrir link QR';
@@ -1482,6 +1575,7 @@
             (function(pres) { btnLink.onclick = function() { abrirCNR(pres, ''); }; })(r.presentacion);
           }
           bar.appendChild(btnLink);
+
           var btnEliminar = document.createElement('button');
           btnEliminar.className = 'btn-sm danger';
           btnEliminar.title = 'Eliminar';
@@ -1547,33 +1641,15 @@
           btnPegar.innerHTML = '&#128203; Pegar datos CNR';
           (function(id) { btnPegar.onclick = function() { pegarDesdeCNR(id); }; })(r.id);
           bottomRow.appendChild(btnPegar);
-          var btnEditar = document.createElement('button');
-          btnEditar.className = 'btn-sm edit-btn';
-          btnEditar.innerHTML = '&#9998; Editar';
-          (function(id) { btnEditar.onclick = function() { editarDetalles(id); }; })(r.id);
-          bottomRow.appendChild(btnEditar);
-
-          // Botón consulta automática CNR
-          var btnConsultar = document.createElement('button');
-          btnConsultar.className = 'btn-sm link-btn';
-          btnConsultar.innerHTML = '🔄 CNR Auto';
-          btnConsultar.title = 'Consultar CNR automáticamente';
-          (function(id) { 
-            btnConsultar.onclick = function() { btnconsultarCNRAutomatico(id); }; 
-          })(r.id);
-          bottomRow.appendChild(btnConsultar);
-
-
+          // botones eliminados — reemplazados por swipe
           var timestamp = document.createElement('span');
           timestamp.className = 'item-timestamp';
           timestamp.innerHTML = '&#128336; ' + r.fecha;
           bottomRow.appendChild(timestamp);
           body.appendChild(bottomRow);
           item.appendChild(body);
-          list.appendChild(item);
-
-
-        }
+          list.appendChild(swipeWrapper);
+        }        
         if (terminoBusqueda) aplicarFiltro();
       }
 
@@ -1870,8 +1946,8 @@
         reader.readAsText(file);
       }
 
-      
-      
+
+
       function toggleMenuBackup() {
         const m = document.getElementById('menu-backup');
         const c = document.getElementById('menu-cargar');
@@ -1889,7 +1965,7 @@
         document.getElementById('menu-cargar').style.display = 'none';
       }
 
-      
+
       async function actualizarPesoCloud() {
         const el = document.getElementById('cloud-size');
         if (el) el.textContent = '☁️ …';
@@ -1905,7 +1981,7 @@
           toast('❌ ' + e.message);
         }
       }
-      
+
       async function cloudGuardar() {
         try {
           const resp = await fetch(CF_WORKER + '/kv-save', {
@@ -1942,7 +2018,7 @@
           toast('☁️ ' + nuevos + ' registros cargados desde la nube.');
         } catch(e) { toast('❌ Error al cargar desde nube: ' + e.message); }
       }
-      
+
       function guardarEnStorage() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(registros));
         actualizarStorageBar();
