@@ -855,7 +855,7 @@
         var btn = document.getElementById('btnActualizarMasivo');
         if (btn) { btn.disabled = true; btn.innerHTML = '⏳ 0/' + ids.length; }
 
-        var exitosos = 0, fallidos = 0, omitidos = (items.length - ids.length);
+        var exitosos = 0, fallidos = 0, omitidos = (fuenteVista.length - ids.length);
 
         for (var i = 0; i < ids.length; i++) {
           if (btn) btn.innerHTML = '⏳ ' + (i + 1) + '/' + ids.length;
