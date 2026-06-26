@@ -822,28 +822,32 @@
 
 
       async function actualizarVisiblesCNR() {
-        var items = document.querySelectorAll('#registro-list .item:not(.hidden)');
-        if (items.length === 0) { toast('No hay registros visibles.'); return; }
+        // Fuente: datos, no DOM
+        var fuenteVista = terminoBusqueda ? (function() {
+          var res = [];
+          for (var i = 0; i < registros.length; i++) {
+            var r = registros[i];
+            var haystack = [
+              r.presentacion || '', r.detalles || '', r.estadoManual || '',
+              r.cnr ? (r.cnr.matricula || '') : '',
+              r.cnr ? (r.cnr.estado    || '') : ''
+            ].join(' ').toLowerCase();
+            if (haystack.indexOf(terminoBusqueda) >= 0) res.push(r);
+          }
+          return res;
+        })() : registros.slice(0, PAGINA_SIZE);
+
+        if (fuenteVista.length === 0) { toast('No hay registros visibles.'); return; }
 
         var ids = [];
-        items.forEach(function(item) {
-          var id = parseInt(item.id.replace('item-', ''));
-          if (isNaN(id)) return;
-
-          // Buscar el registro y verificar su estado
-          for (var i = 0; i < registros.length; i++) {
-            if (registros[i].id === id) {
-
-              var estado = detectarEstado(registros[i]);
-              var estadoId = estado ? estado.id : 'sincategoria';
-              if (terminoBusqueda || OMITIR_ESTADOSCNR.indexOf(estadoId) === -1) {
-                ids.push(id); // Si hay búsqueda activa, ignorar omisión por estado
-              }
-
-              break;
-            }
+        for (var i = 0; i < fuenteVista.length; i++) {
+          var r = fuenteVista[i];
+          var estado = detectarEstado(r);
+          var estadoId = estado ? estado.id : 'sincategoria';
+          if (terminoBusqueda || OMITIR_ESTADOSCNR.indexOf(estadoId) === -1) {
+            ids.push(r.id);
           }
-        });
+        }
 
         if (ids.length === 0) { toast('No hay registros para actualizar.'); return; }
 
@@ -1428,7 +1432,10 @@
       /* ============================================================
          RENDER — LISTA COMPLETA
          ============================================================ */
-      function renderList() {
+      var PAGINA_SIZE = 50;
+
+      function renderList(subset) {
+        var lista = subset || registros.slice(0, PAGINA_SIZE);
         var list  = document.getElementById('registro-list');
         var count = document.getElementById('list-count');
         count.textContent = registros.length;
@@ -1441,8 +1448,8 @@
           return;
         }
         list.innerHTML = '';
-        for (var i = 0; i < registros.length; i++) {
-          var r      = registros[i];
+        for (var i = 0; i < lista.length; i++) {
+          var r      = lista[i];
           var estado = detectarEstado(r);
 
           /* ── Wrapper externo swipe ── */
@@ -1666,8 +1673,11 @@
           body.appendChild(bottomRow);
           item.appendChild(body);
           list.appendChild(swipeWrapper);
-        }        
-        if (terminoBusqueda) aplicarFiltro();
+        }
+        var countEl = document.getElementById('searchCount');
+        if (countEl && !terminoBusqueda && registros.length > PAGINA_SIZE) {
+          countEl.textContent = 'Mostrando ' + lista.length + ' de ' + registros.length + ' registros';
+        }
       }
 
 
@@ -1675,30 +1685,11 @@
          BÚSQUEDA Y FILTRO
          ============================================================ */
       function resetearVista() {
-        var items   = document.querySelectorAll('#registro-list .item');
-        var countEl = document.getElementById('searchCount');
-        var shown   = 0;
-
-        items.forEach(function(item) {
-          var id   = item.id.replace('item-', '');
-          var body = document.getElementById('body-' + id);
-          if (body) body.classList.add('collapsed');
-
-          if (shown < 50) {
-            item.classList.remove('hidden');
-            shown++;
-          } else {
-            item.classList.add('hidden');
-          }
-        });
-
-        if (countEl) {
-          countEl.textContent = registros.length > 100
-            ? 'Mostrando 50 de ' + registros.length + ' registros'
-          : '';
-        }
         terminoBusqueda = '';
         document.getElementById('searchClear').classList.remove('visible');
+        var countEl = document.getElementById('searchCount');
+        if (countEl) countEl.textContent = '';
+        renderList(registros.slice(0, PAGINA_SIZE));
       }
 
 
@@ -1706,12 +1697,14 @@
         var termino = document.getElementById('searchInput').value;
         terminoBusqueda = termino.trim().toLowerCase();
         document.getElementById('searchClear').classList.toggle('visible', terminoBusqueda.length > 0);
+        if (!terminoBusqueda) { renderList(registros.slice(0, PAGINA_SIZE)); return; }
         aplicarFiltro();
       }
 
       function buscar(termino) {
         terminoBusqueda = termino.trim().toLowerCase();
         document.getElementById('searchClear').classList.toggle('visible', terminoBusqueda.length > 0);
+        if (!terminoBusqueda) { renderList(registros.slice(0, PAGINA_SIZE)); return; }
         aplicarFiltro();
       }
 
@@ -1719,25 +1712,21 @@
         terminoBusqueda = '';
         document.getElementById('searchInput').value = '';
         document.getElementById('searchClear').classList.remove('visible');
-        for (var i = 0; i < registros.length; i++) {
-          var body = document.getElementById('body-' + registros[i].id);
-          if (body) body.classList.add('collapsed');
-        }
-        aplicarFiltro();
+        var countEl = document.getElementById('searchCount');
+        if (countEl) countEl.textContent = '';
+        renderList(registros.slice(0, PAGINA_SIZE));
       }
 
       function aplicarFiltro() {
-        var items    = document.querySelectorAll('#registro-list .item');
-        var countEl  = document.getElementById('searchCount');
-        var visibles = 0;
-        items.forEach(function(item) {
-          if (!terminoBusqueda) { item.classList.remove('hidden'); visibles++; return; }
-          var id = item.id.replace('item-', '');
-          var r  = null;
-          for (var i = 0; i < registros.length; i++) {
-            if (String(registros[i].id) === id) { r = registros[i]; break; }
-          }
-          if (!r) { item.classList.add('hidden'); return; }
+        var countEl = document.getElementById('searchCount');
+        if (!terminoBusqueda) {
+          renderList(registros.slice(0, PAGINA_SIZE));
+          if (countEl) countEl.textContent = '';
+          return;
+        }
+        var resultado = [];
+        for (var i = 0; i < registros.length; i++) {
+          var r = registros[i];
           var haystack = [
             r.presentacion || '', r.detalles || '', r.fecha || '',
             r.estadoManual || '',
@@ -1748,19 +1737,12 @@
             r.cnr ? (r.cnr.estado       || '') : '',
             r.cnr ? (r.cnr.presentacion || '') : ''
           ].join(' ').toLowerCase();
-          if (haystack.indexOf(terminoBusqueda) >= 0) {
-            item.classList.remove('hidden');
-            var body = document.getElementById('body-' + r.id);
-            if (body) body.classList.remove('collapsed');
-            visibles++;
-          } else {
-            item.classList.add('hidden');
-          }
-        });
+          if (haystack.indexOf(terminoBusqueda) >= 0) resultado.push(r);
+        }
+        renderList(resultado);
         if (countEl) {
-          countEl.textContent = terminoBusqueda
-            ? (visibles + ' resultado' + (visibles !== 1 ? 's' : '') + ' encontrado' + (visibles !== 1 ? 's' : ''))
-          : '';
+          var v = resultado.length;
+          countEl.textContent = v + ' resultado' + (v !== 1 ? 's' : '') + ' encontrado' + (v !== 1 ? 's' : '');
         }
       }
 
