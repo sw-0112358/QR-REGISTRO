@@ -1,7 +1,7 @@
 {
-  "name": "QR-REGISTRO",
-  "short_name": "QR",
-  "start_url": "/QR-REGISTRO/",
+  "name": "PresentacionesCNR",
+  "short_name": "pre",
+  "start_url": "/PresentacionesCNR/",
   "display": "standalone",
   "icons": [
     {
