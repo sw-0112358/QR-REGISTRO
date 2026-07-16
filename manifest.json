@@ -1,6 +1,6 @@
 {
-  "name": "PresentacionesCNR",
-  "short_name": "pre",
+  "name": "#PRE.CNR",
+  "short_name": "CNR",
   "start_url": "/PresentacionesCNR/",
   "display": "standalone",
   "icons": [
